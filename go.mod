@@ -7,8 +7,8 @@ toolchain go1.24.11
 require (
 	github.com/modelcontextprotocol/go-sdk v1.2.0
 	github.com/stretchr/testify v1.11.1
-	k8s.io/api v0.33.7
-	k8s.io/apimachinery v0.33.7
+	k8s.io/api v0.33.10
+	k8s.io/apimachinery v0.33.10
 	k8s.io/client-go v0.33.7
 )
 
