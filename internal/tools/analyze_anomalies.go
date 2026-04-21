@@ -133,23 +133,33 @@ type AnomalyResult struct {
 	Explanation  string  `json:"explanation"`
 }
 
+// EnrichedSignalsOutput surfaces optional application-level signals from CE v1.1.0 (ADR-017).
+type EnrichedSignalsOutput struct {
+	CPUThrottleRatePct    *float64 `json:"cpu_throttle_rate_pct,omitempty"`
+	HTTPErrorRatePct      *float64 `json:"http_error_rate_pct,omitempty"`
+	HTTPResponseTimeP99Ms *float64 `json:"http_response_time_p99_ms,omitempty"`
+	ThrottlingDetected    bool     `json:"throttling_detected"`
+	HTTPDegraded          bool     `json:"http_degraded"`
+}
+
 // AnalyzeAnomaliesOutput represents the tool output
 type AnalyzeAnomaliesOutput struct {
-	Status         string          `json:"status"`
-	Metric         string          `json:"metric"`
-	TimeRange      string          `json:"time_range"`
-	Namespace      string          `json:"namespace,omitempty"`
-	Deployment     string          `json:"deployment,omitempty"`
-	Pod            string          `json:"pod,omitempty"`
-	LabelSelector  string          `json:"label_selector,omitempty"`
-	FilterTarget   string          `json:"filter_target,omitempty"`
-	ModelUsed      string          `json:"model_used"`
-	Anomalies      []AnomalyResult `json:"anomalies"`
-	AnomalyCount   int             `json:"anomaly_count"`
-	MaxScore       float64         `json:"max_score"`
-	AverageScore   float64         `json:"average_score"`
-	Message        string          `json:"message"`
-	Recommendation string          `json:"recommendation,omitempty"`
+	Status          string                 `json:"status"`
+	Metric          string                 `json:"metric"`
+	TimeRange       string                 `json:"time_range"`
+	Namespace       string                 `json:"namespace,omitempty"`
+	Deployment      string                 `json:"deployment,omitempty"`
+	Pod             string                 `json:"pod,omitempty"`
+	LabelSelector   string                 `json:"label_selector,omitempty"`
+	FilterTarget    string                 `json:"filter_target,omitempty"`
+	ModelUsed       string                 `json:"model_used"`
+	Anomalies       []AnomalyResult        `json:"anomalies"`
+	AnomalyCount    int                    `json:"anomaly_count"`
+	MaxScore        float64                `json:"max_score"`
+	AverageScore    float64                `json:"average_score"`
+	Message         string                 `json:"message"`
+	Recommendation  string                 `json:"recommendation,omitempty"`
+	EnrichedSignals *EnrichedSignalsOutput `json:"enriched_signals,omitempty"`
 }
 
 // Execute runs the analyze-anomalies tool
@@ -249,6 +259,25 @@ func (t *AnalyzeAnomaliesTool) Execute(ctx context.Context, args map[string]inte
 		AnomalyCount:  len(anomalies),
 		MaxScore:      maxScore,
 		AverageScore:  avgScore,
+	}
+
+	// Surface enriched signals from CE v1.1.0 (ADR-017) when present.
+	if ceResponse.EnrichedSignals != nil {
+		es := ceResponse.EnrichedSignals
+		enriched := &EnrichedSignalsOutput{
+			ThrottlingDetected: es.ThrottlingDetected,
+			HTTPDegraded:       es.HTTPDegraded,
+		}
+		if es.CPUThrottleRate != nil {
+			pct := *es.CPUThrottleRate * 100.0
+			enriched.CPUThrottleRatePct = &pct
+		}
+		if es.HTTPErrorRate != nil {
+			pct := *es.HTTPErrorRate * 100.0
+			enriched.HTTPErrorRatePct = &pct
+		}
+		enriched.HTTPResponseTimeP99Ms = es.HTTPResponseTimeP99Ms
+		output.EnrichedSignals = enriched
 	}
 
 	// Use recommendations from coordination engine if available

@@ -166,6 +166,16 @@ func (s *MCPServer) registerTools() error {
 		// NEW: Analyze scaling impact tool (capacity planning)
 		analyzeScalingImpactTool := tools.NewAnalyzeScalingImpactTool(s.ceClient, s.k8sClient)
 		s.registerTool(analyzeScalingImpactTool)
+
+		// v0.2.0: AIOps use-case tools
+		getThrottledPodsTool := tools.NewGetThrottledPodsTool(s.ceClient)
+		s.registerTool(getThrottledPodsTool)
+
+		predictDiskExhaustionTool := tools.NewPredictDiskExhaustionTool(s.ceClient)
+		s.registerTool(predictDiskExhaustionTool)
+
+		getRightSizingTool := tools.NewGetRightSizingRecommendationsTool(s.ceClient)
+		s.registerTool(getRightSizingTool)
 	} else {
 		log.Printf("Skipping Coordination Engine tools (not enabled)")
 	}

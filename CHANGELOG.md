@@ -7,28 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned — v0.2.0 (Tracked Issues)
-
-#### New Tools (CE v1.1.0 integration)
-- `get-throttled-pods`: surfaces per-pod CPU throttle rate from CE CFS metrics — [#109](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/109)
-- `predict-disk-exhaustion`: ETA and urgency classification per filesystem — [#110](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/110)
-- `get-rightsizing-recommendations`: per-container CPU/memory right-sizing deltas — [#111](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/111)
-
-#### Updated Tools
-- `analyze-anomalies`: surface `enriched_signals` (throttle rate, HTTP error rate, P99 latency) from CE v1.1.0 — [#112](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/112)
-- `predict-resource-usage`: expose `forecasted_exhaustion_days` and `recommended_replica_increase` — [#113](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/113)
-
-#### Documentation
-- CHANGELOG v0.2.0 section — [#114](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/114)
-
-### Planned — Infrastructure
+### Planned — v0.3.0 (Tracked Issues)
 - CI gate: verify v0.1.0 tag passes all required checks, enforce branch protection — [#107](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/107)
-- RELEASE.md: release runbook referencing BRANCH_PROTECTION.md — [#108](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/108)
-
-### Planned — Backlog
 - `list-adrs` tool for AI reasoning about architectural decisions — [#115](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/115) `good first issue`
 - ADR documentation compliance gaps (9/10 score items) — [#116](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/116) `good first issue`
 - Dev container for one-click Codespaces development — [#117](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/117) `good first issue`
+
+## [0.2.0] - 2026-04-21
+
+### Added — AIOps Use Case Tools (CE v1.1.0 integration)
+
+#### New Tools
+- **`get-throttled-pods`**: Identifies pods with high CPU throttling using CFS-based metrics from CE ADR-020. Surfaces `cpu_throttle_rate` from `enriched_signals`; fallback to per-pattern `throttle_rate_pct` metadata. Configurable threshold (default 25%). Closes [#109](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/109)
+- **`predict-disk-exhaustion`**: Forecasts filesystem full dates via CE ADR-018 `deriv()` analysis. Returns days-until-full, urgency classification (`critical`/`warning`/`info`/`stable`), projected full date, and daily fill rate per filesystem. Closes [#110](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/110)
+- **`get-rightsizing-recommendations`**: Per-container CPU/memory right-sizing via CE ADR-019. Compares P95 usage against current requests/limits with 20%/50% headroom. Classifies containers as over-provisioned, under-provisioned, or right-sized. Configurable analysis window (7d/14d/30d/90d). Closes [#111](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/111)
+
+#### Updated Tools
+- **`analyze-anomalies`**: Now surfaces `enriched_signals` object when CE v1.1.0 returns application-level signals (ADR-017). Includes `cpu_throttle_rate_pct`, `http_error_rate_pct`, `http_response_time_p99_ms`, `throttling_detected`, `http_degraded`. Closes [#112](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/112)
+- **`predict-resource-usage`**: Enriched with `capacity_forecast` block containing `forecasted_exhaustion_days` and `recommended_replica_increase` from CE `/api/v1/capacity/trends` (use case 5). Enrichment is best-effort; prediction still returned if CE endpoint unavailable. Closes [#113](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/113)
+
+#### Client Updates (`pkg/clients/coordination_engine.go`)
+- Added `EnrichedSignals` struct mirroring CE ADR-017 response fields
+- Added `CapacityTrendingResponse` struct with `ForecastedExhaustionDays` and `RecommendedReplicaIncrease`
+- Added `GetCapacityTrends(ctx, namespace)` method calling `GET /api/v1/capacity/trends`
+
+### Documentation
+- `CHANGELOG.md` v0.2.0 section (this entry). Closes [#114](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/114)
+- `RELEASE.md` added with release runbook and branch protection references. Closes [#108](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/108)
 
 ## [0.1.0] - 2026-04-21
 

@@ -124,17 +124,24 @@ type PredictedMetrics struct {
 	Confidence    float64 `json:"confidence"`
 }
 
+// CapacityForecastOutput surfaces CE v1.1.0 capacity forecasting fields (use case 5).
+type CapacityForecastOutput struct {
+	ForecastedExhaustionDays   int `json:"forecasted_exhaustion_days"`
+	RecommendedReplicaIncrease int `json:"recommended_replica_increase"`
+}
+
 // PredictResourceUsageOutput represents the tool output
 type PredictResourceUsageOutput struct {
-	Status           string           `json:"status"`
-	Scope            string           `json:"scope"`
-	Target           string           `json:"target"`
-	CurrentMetrics   CurrentMetrics   `json:"current_metrics"`
-	PredictedMetrics PredictedMetrics `json:"predicted_metrics"`
-	Trend            string           `json:"trend"`
-	Recommendation   string           `json:"recommendation"`
-	ModelUsed        string           `json:"model_used"`
-	ModelVersion     string           `json:"model_version"`
+	Status           string                  `json:"status"`
+	Scope            string                  `json:"scope"`
+	Target           string                  `json:"target"`
+	CurrentMetrics   CurrentMetrics          `json:"current_metrics"`
+	PredictedMetrics PredictedMetrics        `json:"predicted_metrics"`
+	Trend            string                  `json:"trend"`
+	Recommendation   string                  `json:"recommendation"`
+	ModelUsed        string                  `json:"model_used"`
+	ModelVersion     string                  `json:"model_version"`
+	CapacityForecast *CapacityForecastOutput `json:"capacity_forecast,omitempty"`
 }
 
 // Execute runs the predict-resource-usage tool
@@ -238,6 +245,23 @@ func (t *PredictResourceUsageTool) Execute(ctx context.Context, args map[string]
 	// Use response recommendation if available and we don't have one
 	if output.Recommendation == "" && predResp.Recommendation != "" {
 		output.Recommendation = predResp.Recommendation
+	}
+
+	// Attempt to enrich with capacity forecasting data from CE v1.1.0 (use case 5).
+	// This is best-effort: if the CE endpoint is unavailable we still return the prediction.
+	if trendResp, trendErr := t.ceClient.GetCapacityTrends(ctx, input.Namespace); trendErr == nil {
+		forecast := &CapacityForecastOutput{
+			ForecastedExhaustionDays:   trendResp.ForecastedExhaustionDays,
+			RecommendedReplicaIncrease: trendResp.RecommendedReplicaIncrease,
+		}
+		output.CapacityForecast = forecast
+
+		// Augment recommendation with replica increase hint when exhaustion is near.
+		if trendResp.ForecastedExhaustionDays > 0 && trendResp.ForecastedExhaustionDays <= 30 {
+			hint := fmt.Sprintf(" Capacity forecast: limits reached in %d day(s) — recommend adding %d replica(s).",
+				trendResp.ForecastedExhaustionDays, trendResp.RecommendedReplicaIncrease)
+			output.Recommendation += hint
+		}
 	}
 
 	return output, nil
