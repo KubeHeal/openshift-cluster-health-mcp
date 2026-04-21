@@ -148,6 +148,16 @@ type Alert struct {
 	ActionRequired bool   `json:"action_required"`
 }
 
+// EnrichedSignals holds optional application-level signals from CE v1.1.0 (ADR-017).
+// All fields are nil when Prometheus/Istio metrics are unavailable.
+type EnrichedSignals struct {
+	CPUThrottleRate       *float64 `json:"cpu_throttle_rate,omitempty"`
+	HTTPErrorRate         *float64 `json:"http_error_rate,omitempty"`
+	HTTPResponseTimeP99Ms *float64 `json:"http_response_time_p99_ms,omitempty"`
+	ThrottlingDetected    bool     `json:"throttling_detected"`
+	HTTPDegraded          bool     `json:"http_degraded"`
+}
+
 // AnalyzeAnomaliesResponse represents the response from anomaly analysis
 type AnalyzeAnomaliesResponse struct {
 	Status            string           `json:"status"`
@@ -163,7 +173,8 @@ type AnalyzeAnomaliesResponse struct {
 		ModelsUsed           []string       `json:"models_used"`
 		BySeverity           map[string]int `json:"by_severity"`
 	} `json:"summary"`
-	AnalyzedAt string `json:"analyzed_at"`
+	AnalyzedAt      string           `json:"analyzed_at"`
+	EnrichedSignals *EnrichedSignals `json:"enriched_signals,omitempty"`
 }
 
 // ClusterStatus represents the cluster status from Coordination Engine
@@ -474,4 +485,234 @@ func (c *CoordinationEngineClient) PredictResourceUsage(ctx context.Context, req
 	}
 
 	return result, nil
+}
+
+// ─── v1.1.0 capacity trending (for predict-resource-usage enrichment) ────────
+
+// CapacityTrendingResponse mirrors the CE /api/v1/capacity/trends response.
+type CapacityTrendingResponse struct {
+	Status                   string  `json:"status"`
+	Namespace                string  `json:"namespace,omitempty"`
+	DaysUntil85Percent       int     `json:"days_until_85_percent"`
+	ProjectedExhaustionDate  string  `json:"projected_exhaustion_date,omitempty"`
+	Confidence               float64 `json:"confidence"`
+	ForecastedExhaustionDays int     `json:"forecasted_exhaustion_days"`
+	RecommendedReplicaIncrease int   `json:"recommended_replica_increase"`
+}
+
+// GetCapacityTrends calls GET /api/v1/capacity/trends on the CE.
+func (c *CoordinationEngineClient) GetCapacityTrends(ctx context.Context, namespace string) (*CapacityTrendingResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/capacity/trends", c.baseURL)
+	if namespace != "" {
+		url += "?namespace=" + namespace
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call CE capacity/trends endpoint: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("CE returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result CapacityTrendingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode capacity/trends response: %w", err)
+	}
+	return &result, nil
+}
+
+// ─── v1.1.0 use-case endpoints ─────────────────────────────────────────────
+
+// DiskExhaustionResult mirrors the CE /api/v1/predict/disk-exhaustion response.
+type DiskExhaustionResult struct {
+	Node               string  `json:"node"`
+	Mountpoint         string  `json:"mountpoint"`
+	AvailableBytes     float64 `json:"available_bytes"`
+	TotalBytes         float64 `json:"total_bytes"`
+	UsedPercent        float64 `json:"used_percent"`
+	DailyFillRateBytes float64 `json:"daily_fill_rate_bytes"`
+	DaysUntilFull      int     `json:"days_until_full"`
+	Urgency            string  `json:"urgency"`
+	ProjectedFullDate  string  `json:"projected_full_date,omitempty"`
+}
+
+// DiskExhaustionResponse mirrors the CE /api/v1/predict/disk-exhaustion response envelope.
+type DiskExhaustionResponse struct {
+	Status        string                 `json:"status"`
+	Results       []DiskExhaustionResult `json:"results"`
+	CriticalCount int                    `json:"critical_count"`
+	WarningCount  int                    `json:"warning_count"`
+}
+
+// PredictDiskExhaustion calls GET /api/v1/predict/disk-exhaustion on the CE.
+func (c *CoordinationEngineClient) PredictDiskExhaustion(ctx context.Context, node, mountpoint string) (*DiskExhaustionResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/predict/disk-exhaustion", c.baseURL)
+	if node != "" {
+		url += "?node=" + node
+	}
+	if mountpoint != "" {
+		if node != "" {
+			url += "&mountpoint=" + mountpoint
+		} else {
+			url += "?mountpoint=" + mountpoint
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call CE disk-exhaustion endpoint: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("CE returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result DiskExhaustionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode disk-exhaustion response: %w", err)
+	}
+	return &result, nil
+}
+
+// MemoryLeakResult mirrors the CE /api/v1/predict/memory-leak response.
+type MemoryLeakResult struct {
+	Namespace          string  `json:"namespace"`
+	Pod                string  `json:"pod"`
+	Container          string  `json:"container"`
+	CurrentMemoryBytes float64 `json:"current_memory_bytes"`
+	DailyGrowthBytes   float64 `json:"daily_growth_bytes"`
+	GrowthRSquared     float64 `json:"growth_r_squared"`
+	LeakDetected       bool    `json:"leak_detected"`
+	Confidence         float64 `json:"confidence"`
+}
+
+// MemoryLeakResponse mirrors the CE /api/v1/predict/memory-leak response envelope.
+type MemoryLeakResponse struct {
+	Status    string             `json:"status"`
+	Namespace string             `json:"namespace,omitempty"`
+	Results   []MemoryLeakResult `json:"results"`
+	LeakCount int                `json:"leak_count"`
+}
+
+// DetectMemoryLeaks calls GET /api/v1/predict/memory-leak on the CE.
+func (c *CoordinationEngineClient) DetectMemoryLeaks(ctx context.Context, namespace string) (*MemoryLeakResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/predict/memory-leak", c.baseURL)
+	if namespace != "" {
+		url += "?namespace=" + namespace
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call CE memory-leak endpoint: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("CE returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result MemoryLeakResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode memory-leak response: %w", err)
+	}
+	return &result, nil
+}
+
+// ContainerRightSizingRec mirrors the CE /api/v1/recommendations/rightsizing response.
+type ContainerRightSizingRec struct {
+	Namespace               string   `json:"namespace"`
+	Pod                     string   `json:"pod"`
+	Container               string   `json:"container"`
+	CurrentCPURequest       string   `json:"current_cpu_request"`
+	CurrentCPULimit         string   `json:"current_cpu_limit"`
+	P95CPUUsageCores        float64  `json:"p95_cpu_usage_cores"`
+	RecommendedCPUReq       string   `json:"recommended_cpu_request"`
+	RecommendedCPULimit     string   `json:"recommended_cpu_limit"`
+	CurrentMemoryRequest    string   `json:"current_memory_request"`
+	CurrentMemoryLimit      string   `json:"current_memory_limit"`
+	P95MemoryUsageBytes     float64  `json:"p95_memory_usage_bytes"`
+	RecommendedMemoryReq    string   `json:"recommended_memory_request"`
+	RecommendedMemoryLimit  string   `json:"recommended_memory_limit"`
+	CPUSizing               string   `json:"cpu_sizing"`
+	MemorySizing            string   `json:"memory_sizing"`
+	ThrottleRatePct         *float64 `json:"throttle_rate_pct,omitempty"`
+}
+
+// RightSizingResponse mirrors the CE /api/v1/recommendations/rightsizing envelope.
+type RightSizingResponse struct {
+	Status           string                    `json:"status"`
+	Namespace        string                    `json:"namespace,omitempty"`
+	AnalysisWindow   string                    `json:"analysis_window"`
+	Recommendations  []ContainerRightSizingRec `json:"recommendations"`
+	OverProvisioned  int                       `json:"over_provisioned_count"`
+	UnderProvisioned int                       `json:"under_provisioned_count"`
+	RightSized       int                       `json:"right_sized_count"`
+}
+
+// GetRightSizingRecommendations calls GET /api/v1/recommendations/rightsizing on the CE.
+func (c *CoordinationEngineClient) GetRightSizingRecommendations(ctx context.Context, namespace, pod, window string) (*RightSizingResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/recommendations/rightsizing", c.baseURL)
+	params := []string{}
+	if namespace != "" {
+		params = append(params, "namespace="+namespace)
+	}
+	if pod != "" {
+		params = append(params, "pod="+pod)
+	}
+	if window != "" {
+		params = append(params, "window="+window)
+	}
+	if len(params) > 0 {
+		url += "?"
+		for i, p := range params {
+			if i > 0 {
+				url += "&"
+			}
+			url += p
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call CE rightsizing endpoint: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("CE returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var result RightSizingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode rightsizing response: %w", err)
+	}
+	return &result, nil
 }

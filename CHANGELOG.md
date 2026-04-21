@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned — v0.2.0 (Tracked Issues)
+
+#### New Tools (CE v1.1.0 integration)
+- `get-throttled-pods`: surfaces per-pod CPU throttle rate from CE CFS metrics — [#109](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/109)
+- `predict-disk-exhaustion`: ETA and urgency classification per filesystem — [#110](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/110)
+- `get-rightsizing-recommendations`: per-container CPU/memory right-sizing deltas — [#111](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/111)
+
+#### Updated Tools
+- `analyze-anomalies`: surface `enriched_signals` (throttle rate, HTTP error rate, P99 latency) from CE v1.1.0 — [#112](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/112)
+- `predict-resource-usage`: expose `forecasted_exhaustion_days` and `recommended_replica_increase` — [#113](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/113)
+
+#### Documentation
+- CHANGELOG v0.2.0 section — [#114](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/114)
+
+### Planned — Infrastructure
+- CI gate: verify v0.1.0 tag passes all required checks, enforce branch protection — [#107](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/107)
+- RELEASE.md: release runbook referencing BRANCH_PROTECTION.md — [#108](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/108)
+
+### Planned — Backlog
+- `list-adrs` tool for AI reasoning about architectural decisions — [#115](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/115) `good first issue`
+- ADR documentation compliance gaps (9/10 score items) — [#116](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/116) `good first issue`
+- Dev container for one-click Codespaces development — [#117](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/117) `good first issue`
+
 ## [0.1.0] - 2026-04-21
 
 ### Added
