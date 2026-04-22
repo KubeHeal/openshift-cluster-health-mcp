@@ -54,9 +54,10 @@ Model Context Protocol (MCP) server for OpenShift cluster health monitoring and 
 
 | OpenShift Version | Kubernetes Version | Container Image | Status |
 |-------------------|-------------------|-----------------|--------|
-| **4.18** | 1.31 | `quay.io/takinosh/openshift-cluster-health-mcp:4.18-latest` | ✅ Supported |
-| **4.19** | 1.31 | `quay.io/takinosh/openshift-cluster-health-mcp:4.19-latest` | ✅ Supported |
+| **4.21** | 1.34 | `quay.io/takinosh/openshift-cluster-health-mcp:4.21-latest` | ✅ Supported (Current) |
 | **4.20** | 1.33 | `quay.io/takinosh/openshift-cluster-health-mcp:4.20-latest` | ✅ Supported |
+| **4.19** | 1.32 | `quay.io/takinosh/openshift-cluster-health-mcp:4.19-latest` | ✅ Supported |
+| **4.18** | 1.31 | `quay.io/takinosh/openshift-cluster-health-mcp:4.18-latest` | ⚠️ Maintenance |
 
 **📚 [Complete Installation Guide](./docs/INSTALLATION.md)** - Detailed instructions for installing the MCP server for each OpenShift version.
 
@@ -64,7 +65,7 @@ Model Context Protocol (MCP) server for OpenShift cluster health monitoring and 
 
 ### Prerequisites
 
-- OpenShift 4.18+ (see version compatibility table above)
+- OpenShift 4.19+ recommended (4.21 current; see version compatibility table above)
 - Go 1.24+ (for local development)
 - Helm 3.0+
 - kubectl/oc CLI
@@ -106,7 +107,7 @@ helm install mcp-server ./charts/openshift-cluster-health-mcp \
   --namespace self-healing-platform \
   --create-namespace \
   --set image.repository=quay.io/takinosh/openshift-cluster-health-mcp \
-  --set image.tag=4.20-latest  # Use 4.18-latest, 4.19-latest, or 4.20-latest
+  --set image.tag=4.21-latest  # Use 4.19-latest, 4.20-latest, or 4.21-latest
 
 # Verify deployment
 oc get pods -n self-healing-platform

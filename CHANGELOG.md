@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list-adrs` tool for AI reasoning about architectural decisions — [#115](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/115) `good first issue`
 - ADR documentation compliance gaps (9/10 score items) — [#116](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/116) `good first issue`
 - Dev container for one-click Codespaces development — [#117](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/117) `good first issue`
+- OCP 4.21 support: add `release-4.21` branch, update CI matrix (Kubernetes 1.34), move 4.18 to maintenance-only
 
 ## [0.2.0] - 2026-04-21
 
