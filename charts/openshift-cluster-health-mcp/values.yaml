@@ -6,9 +6,9 @@ replicaCount: 2
 
 # Container image configuration
 image:
-  repository: quay.io/openshift-aiops/cluster-health-mcp
+  repository: quay.io/takinosh/openshift-cluster-health-mcp
   pullPolicy: IfNotPresent
-  tag: "0.1.0"
+  tag: "4.20-latest"
 
 # Image pull secrets (if using private registry)
 imagePullSecrets: []
