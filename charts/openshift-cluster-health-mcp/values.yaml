@@ -36,20 +36,15 @@ rbac:
 # Pod annotations
 podAnnotations: {}
 
-# Pod security context (ADR-007, ADR-008)
-podSecurityContext:
-  runAsNonRoot: true
-  runAsUser: 65532  # nonroot user in distroless
-  fsGroup: 65532
-  seccompProfile:
-    type: RuntimeDefault
+# Pod security context
+# Note: runAsUser/fsGroup/seccompProfile omitted for OpenShift compatibility.
+# OpenShift assigns UID from namespace range; anyuid SCC must be granted to the SA.
+podSecurityContext: {}
 
-# Container security context (ADR-007, ADR-008)
+# Container security context
 securityContext:
   allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 65532  # nonroot user in distroless
+  readOnlyRootFilesystem: false
   capabilities:
     drop:
       - ALL
@@ -107,20 +102,20 @@ integrations:
   # Prometheus integration (Optional)
   prometheus:
     enabled: true
-    url: https://prometheus-k8s.openshift-monitoring.svc:9091
+    url: https://thanos-querier.openshift-monitoring.svc:9091
     # ServiceAccount token will be used for authentication
     tokenSecret: ""  # Optional: specify secret name if using different token
 
   # Coordination Engine integration (Optional - for remediation workflows)
   coordinationEngine:
-    enabled: false  # Enable when Coordination Engine is deployed
-    url: http://coordination-engine:8080/api/v1
+    enabled: true
+    url: http://coordination-engine.self-healing-platform.svc:8080/api/v1
     namespace: self-healing-platform
     timeout: 10s
 
   # KServe ML models integration (Optional - for anomaly detection)
   kserve:
-    enabled: false  # Enable when KServe is deployed
+    enabled: true
     namespace: self-healing-platform
     predictorPort: 8080  # 8080 for RawDeployment mode, 80 for Serverless mode
     timeout: 15s
