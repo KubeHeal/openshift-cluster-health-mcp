@@ -9,6 +9,10 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      k8s-io:
+        patterns:
+          - "k8s.io/*"
     ignore:
       # Pin k8s.io dependencies to v0.31.x for OpenShift 4.18
       - dependency-name: "k8s.io/api"
@@ -39,6 +43,10 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      k8s-io:
+        patterns:
+          - "k8s.io/*"
     ignore:
       # Pin k8s.io dependencies to v0.32.x for OpenShift 4.19
       - dependency-name: "k8s.io/api"
@@ -69,6 +77,10 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      k8s-io:
+        patterns:
+          - "k8s.io/*"
     ignore:
       # Pin k8s.io dependencies to v0.33.x for OpenShift 4.20
       - dependency-name: "k8s.io/api"
@@ -99,6 +111,10 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      k8s-io:
+        patterns:
+          - "k8s.io/*"
     ignore:
       # Pin k8s.io dependencies to v0.34.x for OpenShift 4.21
       - dependency-name: "k8s.io/api"
@@ -129,6 +145,10 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    groups:
+      k8s-io:
+        patterns:
+          - "k8s.io/*"
     ignore:
       # Pin k8s.io dependencies to v0.35.x for OpenShift 4.22
       - dependency-name: "k8s.io/api"
