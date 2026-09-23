@@ -126,8 +126,9 @@ type PredictedMetrics struct {
 
 // CapacityForecastOutput surfaces CE v1.1.0 capacity forecasting fields (use case 5).
 type CapacityForecastOutput struct {
-	ForecastedExhaustionDays   int `json:"forecasted_exhaustion_days"`
-	RecommendedReplicaIncrease int `json:"recommended_replica_increase"`
+	ForecastedExhaustionDays   int    `json:"forecasted_exhaustion_days"`
+	RecommendedReplicaIncrease int    `json:"recommended_replica_increase"`
+	Urgency                    string `json:"urgency"`
 }
 
 // PredictResourceUsageOutput represents the tool output
@@ -253,6 +254,7 @@ func (t *PredictResourceUsageTool) Execute(ctx context.Context, args map[string]
 		forecast := &CapacityForecastOutput{
 			ForecastedExhaustionDays:   trendResp.ForecastedExhaustionDays,
 			RecommendedReplicaIncrease: trendResp.RecommendedReplicaIncrease,
+			Urgency:                    capacityUrgency(trendResp.ForecastedExhaustionDays),
 		}
 		output.CapacityForecast = forecast
 
@@ -260,6 +262,10 @@ func (t *PredictResourceUsageTool) Execute(ctx context.Context, args map[string]
 		if trendResp.ForecastedExhaustionDays > 0 && trendResp.ForecastedExhaustionDays <= 30 {
 			hint := fmt.Sprintf(" Capacity forecast: limits reached in %d day(s) — recommend adding %d replica(s).",
 				trendResp.ForecastedExhaustionDays, trendResp.RecommendedReplicaIncrease)
+			if trendResp.ForecastedExhaustionDays <= 7 {
+				hint = fmt.Sprintf(" 🚨 CRITICAL: resource exhaustion projected in %d day(s). Immediate scale-out required — add %d replica(s) or increase resource limits now.",
+					trendResp.ForecastedExhaustionDays, trendResp.RecommendedReplicaIncrease)
+			}
 			output.Recommendation += hint
 		}
 	}
@@ -560,4 +566,20 @@ func clamp(value, minVal, maxVal float64) float64 {
 		return maxVal
 	}
 	return value
+}
+
+// capacityUrgency classifies the urgency of an approaching resource exhaustion.
+func capacityUrgency(days int) string {
+	switch {
+	case days <= 0:
+		return "critical"
+	case days <= 7:
+		return "critical"
+	case days <= 14:
+		return "warning"
+	case days <= 30:
+		return "attention"
+	default:
+		return "stable"
+	}
 }

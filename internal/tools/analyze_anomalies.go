@@ -300,7 +300,45 @@ func (t *AnalyzeAnomaliesTool) Execute(ctx context.Context, args map[string]inte
 		}
 	}
 
+	// Append natural-language warnings for enriched signal conditions (CE v1.1.0 ADR-017).
+	output.Message += enrichedSignalWarnings(output.EnrichedSignals)
+
 	return output, nil
+}
+
+// enrichedSignalWarnings returns human-readable warning text when the CE
+// reports active throttling or HTTP degradation.  Returns an empty string
+// when there is nothing noteworthy.
+func enrichedSignalWarnings(es *EnrichedSignalsOutput) string {
+	if es == nil {
+		return ""
+	}
+	var warnings []string
+	if es.ThrottlingDetected {
+		rate := ""
+		if es.CPUThrottleRatePct != nil {
+			rate = fmt.Sprintf(" (%.0f%% throttle rate)", *es.CPUThrottleRatePct)
+		}
+		warnings = append(warnings, fmt.Sprintf("⚠️  CPU throttling detected%s — run get-throttled-pods for details.", rate))
+	}
+	if es.HTTPDegraded {
+		parts := []string{}
+		if es.HTTPErrorRatePct != nil {
+			parts = append(parts, fmt.Sprintf("error rate %.1f%%", *es.HTTPErrorRatePct))
+		}
+		if es.HTTPResponseTimeP99Ms != nil {
+			parts = append(parts, fmt.Sprintf("P99 latency %.0f ms", *es.HTTPResponseTimeP99Ms))
+		}
+		detail := ""
+		if len(parts) > 0 {
+			detail = " (" + strings.Join(parts, ", ") + ")"
+		}
+		warnings = append(warnings, fmt.Sprintf("⚠️  HTTP performance degraded%s — check upstream services and pod logs.", detail))
+	}
+	if len(warnings) == 0 {
+		return ""
+	}
+	return " " + strings.Join(warnings, " ")
 }
 func getDefaultThreshold() float64 {
     if val := os.Getenv("ANOMALY_THRESHOLD"); val != "" {

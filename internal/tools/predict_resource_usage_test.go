@@ -709,3 +709,26 @@ func BenchmarkParseTargetDatetime(b *testing.B) {
 		_, _ = tool.parseTargetDatetime("15:00", "2026-01-15")
 	}
 }
+
+func TestCapacityUrgency(t *testing.T) {
+	tests := []struct {
+		days     int
+		expected string
+	}{
+		{0, "critical"},
+		{1, "critical"},
+		{7, "critical"},
+		{8, "warning"},
+		{14, "warning"},
+		{15, "attention"},
+		{30, "attention"},
+		{31, "stable"},
+		{365, "stable"},
+	}
+	for _, tt := range tests {
+		result := capacityUrgency(tt.days)
+		if result != tt.expected {
+			t.Errorf("capacityUrgency(%d) = %q, want %q", tt.days, result, tt.expected)
+		}
+	}
+}

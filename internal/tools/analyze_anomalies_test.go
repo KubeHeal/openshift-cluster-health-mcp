@@ -564,3 +564,64 @@ func TestAnalyzeAnomaliesTool_UseCases(t *testing.T) {
 		assert.Equal(t, "^kube-apiserver.*", regex)
 	})
 }
+
+func TestEnrichedSignalWarnings(t *testing.T) {
+	t.Run("nil signals", func(t *testing.T) {
+		assert.Equal(t, "", enrichedSignalWarnings(nil))
+	})
+
+	t.Run("no warnings", func(t *testing.T) {
+		es := &EnrichedSignalsOutput{
+			ThrottlingDetected: false,
+			HTTPDegraded:       false,
+		}
+		assert.Equal(t, "", enrichedSignalWarnings(es))
+	})
+
+	t.Run("throttling detected with rate", func(t *testing.T) {
+		rate := 42.0
+		es := &EnrichedSignalsOutput{
+			ThrottlingDetected: true,
+			CPUThrottleRatePct: &rate,
+		}
+		result := enrichedSignalWarnings(es)
+		assert.Contains(t, result, "CPU throttling detected")
+		assert.Contains(t, result, "42%")
+		assert.Contains(t, result, "get-throttled-pods")
+	})
+
+	t.Run("throttling detected without rate", func(t *testing.T) {
+		es := &EnrichedSignalsOutput{
+			ThrottlingDetected: true,
+		}
+		result := enrichedSignalWarnings(es)
+		assert.Contains(t, result, "CPU throttling detected")
+		assert.NotContains(t, result, "throttle rate")
+	})
+
+	t.Run("http degraded with details", func(t *testing.T) {
+		errorRate := 5.2
+		p99 := 1500.0
+		es := &EnrichedSignalsOutput{
+			HTTPDegraded:          true,
+			HTTPErrorRatePct:      &errorRate,
+			HTTPResponseTimeP99Ms: &p99,
+		}
+		result := enrichedSignalWarnings(es)
+		assert.Contains(t, result, "HTTP performance degraded")
+		assert.Contains(t, result, "error rate 5.2%")
+		assert.Contains(t, result, "P99 latency 1500 ms")
+	})
+
+	t.Run("both throttling and http degraded", func(t *testing.T) {
+		rate := 60.0
+		es := &EnrichedSignalsOutput{
+			ThrottlingDetected: true,
+			CPUThrottleRatePct: &rate,
+			HTTPDegraded:       true,
+		}
+		result := enrichedSignalWarnings(es)
+		assert.Contains(t, result, "CPU throttling detected")
+		assert.Contains(t, result, "HTTP performance degraded")
+	})
+}
