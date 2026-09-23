@@ -1,5 +1,8 @@
 name: OpenShift Deploy
 
+# Manual deployment workflow for ad-hoc deployments to live OpenShift/ROSA clusters.
+# For automated release gating, see e2e-openshift.yml instead.
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,7 +11,7 @@ on:
         required: true
         type: string
       openshift_token:
-        description: 'OpenShift authentication token'
+        description: 'OpenShift authentication token (from: oc whoami -t)'
         required: true
         type: string
       namespace:
@@ -22,15 +25,22 @@ on:
         default: false
         type: boolean
       openshift_version:
-        description: 'OpenShift version (for validation)'
+        description: 'OpenShift version (selects values overlay)'
         required: false
         type: choice
         options:
+          - '4.22'
           - '4.21'
           - '4.20'
-          - '4.19'
-          - '4.18'
-        default: '4.21'
+        default: '4.22'
+
+# Shared concurrency group prevents parallel deploys to the same ROSA cluster
+concurrency:
+  group: rosa-cluster-e2e
+  cancel-in-progress: false
+
+env:
+  GO_VERSION: '1.26'
 
 jobs:
   test-and-deploy:
@@ -43,71 +53,50 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Download dependencies
         run: go mod download
 
-      - name: Configure OpenShift kubeconfig
+      - name: Install OpenShift CLI
         run: |
-          mkdir -p ~/.kube
-          cat > ~/.kube/config <<EOF
-          apiVersion: v1
-          kind: Config
-          clusters:
-          - cluster:
-              insecure-skip-tls-verify: true
-              server: ${{ inputs.openshift_server }}
-            name: openshift-cluster
-          contexts:
-          - context:
-              cluster: openshift-cluster
-              namespace: ${{ inputs.namespace }}
-              user: openshift-user
-            name: openshift-context
-          current-context: openshift-context
-          users:
-          - name: openshift-user
-            user:
-              token: ${{ inputs.openshift_token }}
-          EOF
-          chmod 600 ~/.kube/config
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar -xzf openshift-client-linux.tar.gz
+          sudo mv oc /usr/local/bin/
+          sudo chmod +x /usr/local/bin/oc
+          rm -f kubectl README.md openshift-client-linux.tar.gz
 
-      - name: Install kubectl
+      - name: Login to OpenShift cluster
         run: |
-          KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
-          curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
+          oc login --token="${{ inputs.openshift_token }}" \
+            --server="${{ inputs.openshift_server }}" \
+            --insecure-skip-tls-verify=true
 
-      - name: Verify OpenShift connectivity
-        run: |
-          echo "Testing connection to OpenShift cluster..."
-          kubectl cluster-info
-          kubectl get nodes
+          echo "Verifying cluster access..."
+          oc cluster-info
+          oc version
 
-          # Get OpenShift version
-          OCP_VERSION=$(kubectl get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null || echo "unknown")
+          OCP_VERSION=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null || echo "unknown")
           echo "OpenShift version: $OCP_VERSION"
 
           EXPECTED_VERSION="${{ inputs.openshift_version }}"
           if [[ "$OCP_VERSION" == "$EXPECTED_VERSION"* ]]; then
-            echo "✓ OpenShift version matches: $EXPECTED_VERSION"
+            echo "OpenShift version matches: $EXPECTED_VERSION"
           else
-            echo "⚠ Version mismatch: Expected $EXPECTED_VERSION, got $OCP_VERSION"
+            echo "Version mismatch: Expected $EXPECTED_VERSION, got $OCP_VERSION"
           fi
 
-      - name: Run integration tests
+      - name: Run tests
         run: |
-          echo "Running integration tests against OpenShift cluster..."
+          echo "Running tests against OpenShift cluster..."
           go test -v -race -coverprofile=coverage.out ./...
         env:
           KUBECONFIG: ${{ runner.home }}/.kube/config
 
       - name: Install Helm
         if: inputs.deploy == true
-        uses: azure/setup-helm@v5
+        uses: azure/setup-helm@v4
         with:
           version: 'latest'
 
@@ -115,20 +104,20 @@ jobs:
         if: inputs.deploy == true
         run: |
           echo "Deploying to OpenShift namespace: ${{ inputs.namespace }}"
+          VALUES_FILE="values-ocp-${{ inputs.openshift_version }}.yaml"
 
-          # Check if release exists
           if helm list -n ${{ inputs.namespace }} | grep -q mcp-server; then
             echo "Upgrading existing release..."
             helm upgrade mcp-server ./charts/openshift-cluster-health-mcp \
               --namespace ${{ inputs.namespace }} \
-              --set image.tag=ocp-${{ inputs.openshift_version }}-latest \
+              --values ./charts/openshift-cluster-health-mcp/${VALUES_FILE} \
               --wait
           else
             echo "Installing new release..."
             helm install mcp-server ./charts/openshift-cluster-health-mcp \
               --namespace ${{ inputs.namespace }} \
               --create-namespace \
-              --set image.tag=ocp-${{ inputs.openshift_version }}-latest \
+              --values ./charts/openshift-cluster-health-mcp/${VALUES_FILE} \
               --wait
           fi
 
@@ -136,17 +125,49 @@ jobs:
         if: inputs.deploy == true
         run: |
           echo "Verifying deployment..."
-          kubectl get pods -n ${{ inputs.namespace }}
-          kubectl get svc -n ${{ inputs.namespace }}
+          oc get pods -n ${{ inputs.namespace }}
+          oc get svc -n ${{ inputs.namespace }}
 
-          # Wait for pod to be ready
-          kubectl wait --for=condition=ready pod \
-            -l app=mcp-server \
+          oc wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=openshift-cluster-health-mcp \
             -n ${{ inputs.namespace }} \
             --timeout=120s
 
-          # Check pod logs
-          kubectl logs -l app=mcp-server -n ${{ inputs.namespace }} --tail=50
+          POD_NAME=$(oc get pods -n ${{ inputs.namespace }} \
+            -l app.kubernetes.io/name=openshift-cluster-health-mcp \
+            -o jsonpath='{.items[0].metadata.name}')
+
+          oc port-forward "pod/${POD_NAME}" 18080:8080 -n ${{ inputs.namespace }} &
+          PF_PID=$!
+          sleep 3
+
+          echo "Testing /health..."
+          curl -sf http://localhost:18080/health | jq .
+
+          echo "Testing /mcp/tools..."
+          curl -sf http://localhost:18080/mcp/tools | jq 'length'
+
+          echo "Testing /mcp/resources..."
+          curl -sf http://localhost:18080/mcp/resources | jq 'length'
+
+          kill $PF_PID 2>/dev/null || true
+
+      - name: Collect logs
+        if: always() && inputs.deploy == true
+        run: |
+          mkdir -p logs
+          oc get pods -n ${{ inputs.namespace }} -o yaml > logs/pods.yaml || true
+          oc logs -n ${{ inputs.namespace }} \
+            -l app.kubernetes.io/name=openshift-cluster-health-mcp \
+            --tail=100 > logs/mcp-server.log || true
+
+      - name: Upload logs
+        if: always() && inputs.deploy == true
+        uses: actions/upload-artifact@v7
+        with:
+          name: openshift-deploy-logs
+          path: logs/
+          retention-days: 7
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v5

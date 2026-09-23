@@ -1,0 +1,9 @@
+# OpenShift 4.22 values overlay
+# Usage: helm install mcp-server ./charts/openshift-cluster-health-mcp -f values-ocp-4.22.yaml
+
+image:
+  tag: "ocp-4.22-latest"
+
+openshiftVersion:
+  target: "4.22"
+  kubernetes: "1.35"

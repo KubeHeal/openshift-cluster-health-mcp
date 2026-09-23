@@ -19,9 +19,9 @@
 
 <!-- Check the branch this PR is targeting -->
 
-- [ ] `main` (OpenShift 4.18 / Kubernetes 1.31)
-- [ ] `release-4.18` (OpenShift 4.18)
-- [ ] `release-4.19` (OpenShift 4.19 / Kubernetes 1.32)
+- [ ] `main` (auto-syncs to current release)
+- [ ] `release-4.22` (OpenShift 4.22 / Kubernetes 1.35) — current
+- [ ] `release-4.21` (OpenShift 4.21 / Kubernetes 1.34)
 - [ ] `release-4.20` (OpenShift 4.20 / Kubernetes 1.33)
 
 ## Testing Performed
