@@ -69,3 +69,8 @@ build/
 .mcp-server-context.md
 cmd/coordination-engine/coordination-engine
 *.exe
+
+# Repo Governor (local development governance)
+.claude/settings.local.json
+.claude/skills/repo-governor/
+.repo-governor/

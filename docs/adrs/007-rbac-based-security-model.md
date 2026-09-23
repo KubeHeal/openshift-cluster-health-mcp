@@ -39,7 +39,9 @@ The OpenShift Cluster Health MCP Server requires access to cluster resources (no
 
 ## Decision
 
-We will implement a **RBAC-based security model** using Kubernetes ServiceAccounts, ClusterRoles, and RoleBindings. The MCP server will run with minimal, read-only permissions and use ServiceAccount tokens for authentication.
+We will implement a **RBAC-based security model** using Kubernetes ServiceAccounts, ClusterRoles, and RoleBindings, following the official [Kubernetes RBAC documentation](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) and [OpenShift RBAC best practices](https://docs.openshift.com/container-platform/4.22/authentication/using-rbac.html). The MCP server will run with minimal, read-only permissions and use ServiceAccount tokens for authentication.
+
+The full RBAC configuration is defined in the Helm chart at `charts/openshift-cluster-health-mcp/templates/clusterrole.yaml` and related template files.
 
 ### Core Security Principles
 

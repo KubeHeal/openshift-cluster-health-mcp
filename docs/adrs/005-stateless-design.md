@@ -361,6 +361,19 @@ func (t *ClusterHealthTool) Execute(ctx context.Context) (*Response, error) {
 
 ## Consequences
 
+### Why Deployment Instead of StatefulSet
+
+The MCP server is deployed as a Kubernetes **Deployment** (not a StatefulSet) because it holds no persistent state that requires stable network identities or ordered scaling. StatefulSets are designed for workloads that need:
+- Stable, unique network identifiers (e.g., database replicas)
+- Persistent storage volumes bound to specific pods
+- Ordered, graceful deployment and scaling
+
+None of these apply to the MCP server. Any replica can handle any request, replicas are interchangeable, and no PersistentVolumeClaims are needed. This is the defining characteristic of a stateless workload in Kubernetes.
+
+### In-Memory Caching as a Stateless Pattern
+
+The caching layer (`pkg/cache/memory_cache.go`) implements a stateless caching pattern: each pod maintains its own independent in-memory cache with TTL-based expiration. Cache entries are ephemeral — they are reconstructed from authoritative sources (Kubernetes API, Coordination Engine) on cache miss. No cache synchronization occurs between replicas, and cache loss on pod restart is by design. This ensures the caching layer does not introduce statefulness.
+
 ### Positive
 
 - ✅ **Operational Simplicity**: No database to backup, restore, or migrate

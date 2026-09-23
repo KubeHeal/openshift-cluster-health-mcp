@@ -253,9 +253,21 @@ This phased approach allows us to:
 
 ---
 
+### PostgreSQL and Persistent Storage Decision Criteria
+
+Phase 2 references PostgreSQL for the Coordination Engine. As of September 2026, there are no active plans to add persistent storage to the MCP server itself — this is **deferred** pending evidence of need. The MCP server remains fully stateless (ADR-005).
+
+Persistent storage should only be reconsidered if any of these triggers occur:
+1. **Incident history exceeds external capacity**: Coordination Engine PostgreSQL can no longer serve historical queries at acceptable latency
+2. **Audit trail requirements**: Regulatory or compliance needs mandate local persistence of MCP tool invocations
+3. **Offline mode**: A requirement emerges for the MCP server to operate without connectivity to external data sources
+4. **User request volume**: Caching proves insufficient and persistent query result storage is needed (e.g., >10,000 requests/hour)
+
+If triggered, a new ADR should be created to evaluate storage options (PostgreSQL via `pgx`, SQLite, or external delegation). The current design explicitly avoids persistent storage to maintain operational simplicity.
+
 ### Phase 3: Standalone Kubernetes Mode (Months 12-18)
 
-**Status**: Future roadmap
+**Status**: Future roadmap (no active plans as of 2026-09-23)
 
 **Architecture**:
 ```
