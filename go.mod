@@ -6,7 +6,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.6.0
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.33.11
-	k8s.io/apimachinery v0.33.11
+	k8s.io/apimachinery v0.33.13
 	k8s.io/client-go v0.33.11
 )
 
