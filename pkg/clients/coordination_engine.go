@@ -716,3 +716,82 @@ func (c *CoordinationEngineClient) GetRightSizingRecommendations(ctx context.Con
 	}
 	return &result, nil
 }
+
+// --- Deep RCA v2 (CE v1.2.0, ADR-021) ---
+
+// RCARootCause represents a single root-cause finding from a correlator.
+type RCARootCause struct {
+	SignalType       string                 `json:"signal_type"`
+	Description      string                 `json:"description"`
+	Evidence         map[string]interface{} `json:"evidence"`
+	Confidence       float64                `json:"confidence"`
+	RemediationSteps []string               `json:"remediation_steps"`
+}
+
+// RCACorrelatorStat records per-correlator execution metadata.
+type RCACorrelatorStat struct {
+	Name     string `json:"name"`
+	Findings int    `json:"findings"`
+	Duration int    `json:"duration_ms"`
+	Error    string `json:"error,omitempty"`
+}
+
+// RCATimeRange is the start/end pair from the response.
+type RCATimeRange struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
+// RCAResponse mirrors the CE POST /api/v1/investigate/rca response.
+type RCAResponse struct {
+	Status             string              `json:"status"`
+	Service            string              `json:"service"`
+	Namespace          string              `json:"namespace"`
+	TimeRange          RCATimeRange        `json:"time_range"`
+	RootCauses         []RCARootCause      `json:"root_causes"`
+	ConfidenceScore    float64             `json:"confidence_score"`
+	AffectedComponents []string            `json:"affected_components"`
+	IstioAvailable     bool                `json:"istio_available"`
+	CorrelatorStats    []RCACorrelatorStat `json:"correlator_stats,omitempty"`
+}
+
+// RCARequest is the request body for the investigate RCA endpoint.
+type RCARequest struct {
+	Service   string `json:"service"`
+	Namespace string `json:"namespace"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+}
+
+// InvestigateRCA calls POST /api/v1/investigate/rca on the CE (v1.2.0, ADR-021).
+func (c *CoordinationEngineClient) InvestigateRCA(ctx context.Context, req *RCARequest) (*RCAResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/investigate/rca", c.baseURL)
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal RCA request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RCA request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call CE RCA endpoint: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("CE RCA returned %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result RCAResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode RCA response: %w", err)
+	}
+	return &result, nil
+}

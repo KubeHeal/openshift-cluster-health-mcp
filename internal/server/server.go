@@ -180,6 +180,10 @@ func (s *MCPServer) registerTools() error {
 
 		getRightSizingTool := tools.NewGetRightSizingRecommendationsTool(s.ceClient)
 		s.registerTool(getRightSizingTool)
+
+		// v1.2.0: Deep RCA investigation (CE ADR-021)
+		investigateRCATool := tools.NewInvestigateRCATool(s.ceClient)
+		s.registerTool(investigateRCATool)
 	} else {
 		log.Printf("Skipping Coordination Engine tools (not enabled)")
 	}
