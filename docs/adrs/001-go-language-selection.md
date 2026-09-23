@@ -22,6 +22,7 @@ We evaluated three primary language options for implementing the MCP server:
 - **Coordination Engine**: Python/Flask-based service
 - **Kubernetes Ecosystem**: Predominantly Go-based (kubectl, operators, controllers)
 - **MCP SDK Support**: Official SDKs available for TypeScript, Python, and Go
+- **Kubernetes Client Integration**: The project's `pkg/clients/kubernetes.go` demonstrates direct use of `k8s.io/client-go` for cluster operations, validating Go as the natural choice for Kubernetes-native tooling
 
 ### Requirements
 
@@ -117,11 +118,20 @@ We will use **Go 1.21+** as the implementation language for the OpenShift Cluste
 |-----------|-----------|---------------|
 | **Language** | Go 1.21+ | Native K8s support, performance, single binary |
 | **MCP SDK** | modelcontextprotocol/go-sdk | Official Anthropic SDK |
-| **K8s Client** | k8s.io/client-go v0.29+ | Official Kubernetes client |
+| **K8s Client** | k8s.io/client-go v0.33+ | Official Kubernetes client (see `pkg/clients/kubernetes.go`) |
 | **HTTP Server** | net/http (stdlib) | No dependencies, production-ready |
 | **Logging** | slog (stdlib) | Structured logging, zero dependencies |
 | **Metrics** | prometheus/client_golang | Standard Prometheus integration |
 | **Testing** | testing (stdlib) + testify | Unit and integration testing |
+
+### Go Version Compatibility with Kubernetes APIs
+
+| Go Version | Supported k8s.io client-go | OpenShift Versions | Status |
+|------------|---------------------------|-------------------|--------|
+| Go 1.24+ | v0.33.x – v0.35.x | 4.20 – 4.22 | **Current** |
+| Go 1.26+ | v0.34.x – v0.35.x | 4.21 – 4.22 | Target (see #128) |
+
+The Go toolchain version is pinned in `go.mod` (`go 1.24.0`, `toolchain go1.24.11`) to ensure reproducible builds across all release branches. See ADR-010 for the full version compatibility matrix across OpenShift releases.
 
 ### Dependencies Intentionally Excluded
 

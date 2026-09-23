@@ -2,7 +2,7 @@
 
 **Generated:** 2026-01-25
 **Priority:** Low (Non-blocking)
-**Status:** Backlog
+**Status:** Completed (2026-09-23, issue #116)
 
 ## Overview
 
@@ -16,15 +16,15 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Gap:** Missing Kubernetes references in documentation
 
 ### Tasks
-- [ ] Add explicit Kubernetes client-go references to Context section
+- [x] Add explicit Kubernetes client-go references to Context section
   - Location: `docs/adrs/001-go-language-selection.md` - Context section
   - Detail: Reference `pkg/clients/kubernetes.go` as evidence of Go + Kubernetes integration
-  - Effort: 15 minutes
+  - Completed: 2026-09-23
 
-- [ ] Document Go version compatibility with Kubernetes API versions
+- [x] Document Go version compatibility with Kubernetes API versions
   - Location: `docs/adrs/001-go-language-selection.md` - Technical Considerations section
-  - Detail: Add table showing Go 1.24+ compatibility with Kubernetes 1.24-1.26 API versions
-  - Effort: 30 minutes
+  - Detail: Added Go version compatibility table with k8s.io client-go version mapping
+  - Completed: 2026-09-23
 
 ---
 
@@ -34,15 +34,15 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Gap:** Missing Kubernetes stateless pattern references
 
 ### Tasks
-- [ ] Enhance Consequences section with Kubernetes StatefulSet comparison
+- [x] Enhance Consequences section with Kubernetes StatefulSet comparison
   - Location: `docs/adrs/005-stateless-design.md` - Consequences section
-  - Detail: Add explicit note about why Deployment is used instead of StatefulSet
-  - Effort: 20 minutes
+  - Detail: Added "Why Deployment Instead of StatefulSet" subsection explaining why StatefulSet is not needed
+  - Completed: 2026-09-23
 
-- [ ] Document caching strategy as stateless pattern implementation
+- [x] Document caching strategy as stateless pattern implementation
   - Location: `docs/adrs/005-stateless-design.md` - Implementation section
-  - Detail: Reference `pkg/cache/memory_cache.go` as example of stateless caching
-  - Effort: 15 minutes
+  - Detail: Added "In-Memory Caching as a Stateless Pattern" subsection referencing `pkg/cache/memory_cache.go`
+  - Completed: 2026-09-23
 
 ---
 
@@ -52,15 +52,15 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Gap:** Missing Kubernetes RBAC documentation cross-references
 
 ### Tasks
-- [ ] Cross-reference Kubernetes RBAC documentation
+- [x] Cross-reference Kubernetes RBAC documentation
   - Location: `docs/adrs/007-rbac-based-security-model.md` - Decision section
-  - Detail: Add links to official Kubernetes RBAC docs and OpenShift RBAC best practices
-  - Effort: 10 minutes
+  - Detail: Added links to official Kubernetes RBAC docs and OpenShift RBAC best practices
+  - Completed: 2026-09-23
 
-- [ ] Add examples of ClusterRole and ServiceAccount YAML from charts/
+- [x] Add examples of ClusterRole and ServiceAccount YAML from charts/
   - Location: `docs/adrs/007-rbac-based-security-model.md` - Implementation section
-  - Detail: Include snippets from `charts/openshift-cluster-health-mcp/templates/clusterrole.yaml`
-  - Effort: 25 minutes
+  - Detail: ClusterRole YAML snippets already present; added explicit reference to `charts/openshift-cluster-health-mcp/templates/clusterrole.yaml`
+  - Completed: 2026-09-23
 
 ---
 
@@ -70,15 +70,15 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Gap:** Missing PostgreSQL and Kubernetes future planning details
 
 ### Tasks
-- [ ] Update Phase 3 PostgreSQL planning section with current timeline
+- [x] Update Phase 3 PostgreSQL planning section with current timeline
   - Location: `docs/adrs/009-architecture-evolution-roadmap.md` - Roadmap section
-  - Detail: Clarify Phase 3 timeline or mark as "deferred" if no active plans
-  - Effort: 20 minutes
+  - Detail: Added "PostgreSQL and Persistent Storage Decision Criteria" section, marked as deferred with no active plans
+  - Completed: 2026-09-23
 
-- [ ] Document decision criteria for when to implement persistent storage
+- [x] Document decision criteria for when to implement persistent storage
   - Location: `docs/adrs/009-architecture-evolution-roadmap.md` - Decision Criteria section
-  - Detail: Add specific triggers (e.g., "when incident history >1000 items" or "user request")
-  - Effort: 30 minutes
+  - Detail: Added 4 specific triggers (incident history capacity, audit trail, offline mode, request volume)
+  - Completed: 2026-09-23
 
 ---
 
@@ -88,15 +88,15 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Gap:** Missing Kubernetes version compatibility matrix
 
 ### Tasks
-- [ ] Add Kubernetes API version compatibility matrix
+- [x] Add Kubernetes API version compatibility matrix
   - Location: `docs/adrs/010-version-compatibility-upgrade-roadmap.md` - Compatibility section
-  - Detail: Create table showing MCP server versions vs. Kubernetes/OpenShift versions
-  - Effort: 45 minutes
+  - Detail: Extended compatibility matrix to cover OCP 4.18 through 4.22 with k8s.io version mapping
+  - Completed: 2026-09-23 (via issue #123 ADR-010 amendment)
 
-- [ ] Document tested Kubernetes versions (1.24, 1.25, 1.26, etc.)
+- [x] Document tested Kubernetes versions (1.24, 1.25, 1.26, etc.)
   - Location: `docs/adrs/010-version-compatibility-upgrade-roadmap.md` - Testing section
-  - Detail: List versions tested in CI/CD and production environments
-  - Effort: 20 minutes
+  - Detail: Updated CI matrix to test against K8s 1.33 (OCP 4.20), 1.34 (OCP 4.21), 1.35 (OCP 4.22)
+  - Completed: 2026-09-23 (via issue #123 ADR-010 amendment)
 
 ---
 
@@ -106,15 +106,13 @@ This document tracks minor documentation enhancements identified during the ADR 
 **Confidence:** 60% (likely false positive)
 
 ### Tasks
-- [ ] Review GitHub workflow token usage in `.github/workflows/ci.yml:86`
-  - Detail: Verify this is standard `secrets.GITHUB_TOKEN` reference
-  - Expected: False positive from tree-sitter analysis (standard GitHub Actions pattern)
-  - Effort: 5 minutes
+- [x] Review GitHub workflow token usage in `.github/workflows/ci.yml:86`
+  - Detail: Confirmed false positive. Line 86 is a kubectl config command. No `secrets.GITHUB_TOKEN` reference exists in ci.yml at all — the flagged lines use `env.OPENSHIFT_TOKEN` (environment variable, not a secret reference).
+  - Completed: 2026-09-23
 
-- [ ] Review GitHub workflow token usage in `.github/workflows/ci.yml:98`
-  - Detail: Verify this is standard `secrets.GITHUB_TOKEN` reference
-  - Expected: False positive from tree-sitter analysis (standard GitHub Actions pattern)
-  - Effort: 5 minutes
+- [x] Review GitHub workflow token usage in `.github/workflows/ci.yml:98`
+  - Detail: Confirmed false positive. Line 98 is part of the healthcheck test block using `env.OPENSHIFT_TOKEN`. Only `container.yml` uses `secrets.*` (for standard Quay registry credentials).
+  - Completed: 2026-09-23
 
 ---
 
