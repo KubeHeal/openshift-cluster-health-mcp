@@ -78,7 +78,7 @@ func TestGetRightSizingRecommendationsTool_Execute_OverProvisioned(t *testing.T)
 			RightSized:       0,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -130,7 +130,7 @@ func TestGetRightSizingRecommendationsTool_Execute_UnderProvisioned(t *testing.T
 			RightSized:       0,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -171,7 +171,7 @@ func TestGetRightSizingRecommendationsTool_Execute_AllRightSized(t *testing.T) {
 			RightSized:       1,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -196,7 +196,7 @@ func TestGetRightSizingRecommendationsTool_Execute_NoResults(t *testing.T) {
 			Recommendations: []clients.ContainerRightSizingRec{},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -227,7 +227,7 @@ func TestGetRightSizingRecommendationsTool_Execute_Mixed(t *testing.T) {
 			RightSized:       0,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 

@@ -96,7 +96,7 @@ func TestParseADRTable_SkipsReserved(t *testing.T) {
 func TestListADRsTool_Execute_NoFilter(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(githubContentResponse(sampleADRReadme))
+		_, _ = w.Write(githubContentResponse(sampleADRReadme))
 	}))
 	defer srv.Close()
 
@@ -125,7 +125,7 @@ func TestListADRsTool_Execute_NoFilter(t *testing.T) {
 func TestListADRsTool_Execute_StatusFilter(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(githubContentResponse(sampleADRReadme))
+		_, _ = w.Write(githubContentResponse(sampleADRReadme))
 	}))
 	defer srv.Close()
 
@@ -152,7 +152,7 @@ func TestListADRsTool_Execute_CacheHit(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(githubContentResponse(sampleADRReadme))
+		_, _ = w.Write(githubContentResponse(sampleADRReadme))
 	}))
 	defer srv.Close()
 
@@ -178,7 +178,7 @@ func TestListADRsTool_Execute_CacheHit(t *testing.T) {
 func TestListADRsTool_Execute_StatusFilterImplemented(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(githubContentResponse(sampleADRReadme))
+		_, _ = w.Write(githubContentResponse(sampleADRReadme))
 	}))
 	defer srv.Close()
 
