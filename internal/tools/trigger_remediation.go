@@ -27,7 +27,19 @@ func (t *TriggerRemediationTool) Name() string {
 
 // Description returns the tool description
 func (t *TriggerRemediationTool) Description() string {
-	return "Trigger automated remediation actions for incidents through the Coordination Engine. Requires incident_id, namespace, resource details, and issue information."
+	return `Trigger automated remediation actions for incidents through the Coordination Engine.
+
+WHAT THIS TOOL DOES:
+- Sends a remediation request to the Coordination Engine
+- CE detects the deployment method (ArgoCD, Helm, Operator, Manual) and applies the appropriate strategy
+- For OOMKill issues (issue_type="oom_kill"), CE v1.2.0 can automatically patch Deployment memory limits
+
+OOMKill REMEDIATION (CE v1.2.0):
+- When issue_type is "oom_kill", the CE applies memory limit patching instead of pod deletion
+- The response includes oomkill_detected=true and a recommendation to run get-rightsizing-recommendations
+- Always prefer memory limit increase over restart for OOMKill incidents
+
+Requires: incident_id, namespace, resource details, and issue information.`
 }
 
 // InputSchema returns the JSON schema for tool inputs
@@ -97,6 +109,8 @@ type TriggerRemediationOutput struct {
 	EstimatedDuration string `json:"estimated_duration"`
 	Message           string `json:"message"`
 	DryRun            bool   `json:"dry_run,omitempty"`
+	OOMKillDetected   bool   `json:"oomkill_detected"`
+	OOMKillAdvice     string `json:"oomkill_advice,omitempty"`
 }
 
 // Execute runs the trigger-remediation tool
@@ -162,6 +176,17 @@ func (t *TriggerRemediationTool) Execute(ctx context.Context, args map[string]in
 		output.Message = fmt.Sprintf("DRY RUN: Remediation for %s/%s validated successfully", input.ResourceKind, input.ResourceName)
 	} else {
 		output.Message = fmt.Sprintf("Remediation triggered successfully (workflow: %s)", resp.WorkflowID)
+	}
+
+	// OOMKill-aware context (CE v1.2.0): surface memory patching capability.
+	if input.IssueType == "oom_kill" {
+		output.OOMKillDetected = true
+		output.OOMKillAdvice = fmt.Sprintf(
+			"OOMKill detected for %s/%s in namespace %s. CE v1.2.0 will attempt memory limit patching "+
+				"instead of pod deletion. After remediation completes, run get-rightsizing-recommendations "+
+				"to verify the new limits are appropriate for long-term stability.",
+			input.ResourceKind, input.ResourceName, input.Namespace)
+		output.Message += " ⚠️ OOMKill: memory limit patch applied — verify with get-rightsizing-recommendations."
 	}
 
 	return output, nil

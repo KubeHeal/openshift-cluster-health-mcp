@@ -151,6 +151,8 @@ For pre-release validation or testing against real OpenShift clusters, use the m
 | `LOG_FORMAT` | Log format (json or text) | `json` | No |
 | `ENABLE_COORDINATION_ENGINE` | Enable Coordination Engine integration | `false` | No |
 | `COORDINATION_ENGINE_URL` | Coordination Engine endpoint | - | If CE enabled |
+
+> **Coordination Engine version compatibility**: CE v1.0.0 supports core incident and remediation tools. CE v1.1.0 adds enriched anomaly signals, disk exhaustion prediction, rightsizing, and capacity forecasting. CE v1.2.0 adds deep RCA investigation and OOMKill memory patching. See [ADR-010](docs/adrs/010-version-compatibility-upgrade-roadmap.md#coordination-engine-version-compatibility) for the full compatibility matrix.
 | `ENABLE_KSERVE` | Enable KServe integration | `false` | No |
 | `KSERVE_NAMESPACE` | Namespace for KServe models | `self-healing-platform` | If KServe enabled |
 | `KSERVE_PREDICTOR_PORT` | KServe predictor port (8080 for RawDeployment, 80 for Serverless) | `8080` | No |

@@ -887,6 +887,30 @@ Before each OpenShift upgrade:
 - ⬜ Regular upgrade cadence (every 6 months)
 - ⬜ Zero breaking changes for supported versions
 
+## Coordination Engine Version Compatibility
+
+The MCP server integrates with the Coordination Engine (CE) and different tools depend on different CE versions. When the CE is at an older version, tools requiring newer features will return informative errors; the server degrades gracefully.
+
+The CE exposes its version via `GET /api/v1/health` — the `version` field in the response can be used for runtime version detection.
+
+| MCP Tool | Min CE Version | CE Endpoint | Notes |
+|----------|---------------|-------------|-------|
+| `list-incidents` | v1.0.0 | `GET /api/v1/incidents` | Core incident listing |
+| `trigger-remediation` | v1.0.0 | `POST /api/v1/remediation/trigger` | v1.2.0 adds OOMKill memory patching |
+| `analyze-anomalies` (enriched signals) | v1.1.0 | `POST /api/v1/anomalies/analyze` | `enriched_signals` field added in v1.1.0 |
+| `get-throttled-pods` | v1.1.0 | `POST /api/v1/anomalies/analyze` | Uses `cpu_throttle_rate` from enriched signals (ADR-020) |
+| `predict-disk-exhaustion` | v1.1.0 | `GET /api/v1/predict/disk-exhaustion` | ADR-018 |
+| `get-rightsizing-recommendations` | v1.1.0 | `GET /api/v1/recommendations/rightsizing` | ADR-019 |
+| `predict-resource-usage` (capacity forecast) | v1.1.0 | `GET /api/v1/capacity/trends` | Forecasted exhaustion days |
+| `investigate-rca` | v1.2.0 | `POST /api/v1/investigate/rca` | Deep RCA v2 — ADR-021 |
+| `trigger-remediation` (OOMKill patching) | v1.2.0 | `POST /api/v1/remediation/trigger` | Memory limit patching for OOMKilled pods |
+
+### Graceful Degradation
+
+- **CE unavailable**: All CE-dependent tools return a clear error ("Coordination Engine not enabled"). Core tools (`get-cluster-health`, `list-pods`, `list-adrs`) continue to function.
+- **CE v1.0.x with v1.1.0 tools**: The CE will return HTTP 404 for unknown endpoints. The MCP tool surfaces this as "endpoint not available — CE version may not support this feature".
+- **CE v1.1.x with v1.2.0 tools**: Same degradation — `investigate-rca` returns an error pointing to the CE version requirement.
+
 ## Related ADRs
 
 - [ADR-001: Go Language Selection](001-go-language-selection.md)
