@@ -37,14 +37,20 @@ rbac:
 podAnnotations: {}
 
 # Pod security context
-# Note: runAsUser/fsGroup/seccompProfile omitted for OpenShift compatibility.
-# OpenShift assigns UID from namespace range; anyuid SCC must be granted to the SA.
-podSecurityContext: {}
+# Compatible with OpenShift restricted-v2 SCC and ROSA clusters.
+# runAsUser and fsGroup are null so OpenShift assigns UIDs from the namespace range.
+# Do not set runAsUser on ROSA clusters.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: null
+  fsGroup: null
 
 # Container security context
 securityContext:
   allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
   capabilities:
     drop:
       - ALL

@@ -16,26 +16,32 @@ The MCP server uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
 
 ### OpenShift Compatibility Matrix
 
-OCP 4.21 is now GA (April 2026) — active window is 4.19 / 4.20 / 4.21.
+OCP 4.22 is now GA (June 2026) — active window is 4.20 / 4.21 / 4.22.
 
 | OCP Version | Kubernetes | Status |
 |-------------|------------|--------|
-| 4.21        | 1.34       | Active (current) |
+| 4.22        | 1.35       | Active (current) |
+| 4.21        | 1.34       | Active |
 | 4.20        | 1.33       | Active |
-| 4.19        | 1.32       | Active |
-| 4.18        | 1.31       | Maintenance — dropping when 4.22 releases |
+| 4.19        | 1.32       | Maintenance — dropping when 4.23 releases |
+| 4.18        | 1.31       | End of life |
 
 ---
 
 ## Branch Strategy
 
 ```
-main          ← integration branch (all required checks must pass before merge)
-release-4.21  ← patch backports for OCP 4.21 train (current)
+main          ← integration branch (auto-syncs to release-4.22)
+release-4.22  ← current release (OCP 4.22)
+release-4.21  ← patch backports for OCP 4.21 train
 release-4.20  ← patch backports for OCP 4.20 train
-release-4.19  ← patch backports for OCP 4.19 train
-release-4.18  ← maintenance only (no new features)
+release-4.19  ← maintenance only (no new features)
+release-4.18  ← end of life (archived)
 ```
+
+The `sync-release-branch.yml` workflow automatically merges `main` into `release-4.22`
+on every push. For backports to older branches, see
+[docs/playbooks/cherry-pick-fixes.md](./docs/playbooks/cherry-pick-fixes.md).
 
 ---
 
@@ -156,6 +162,11 @@ verify that:
 ## Related Documentation
 
 - [CHANGELOG.md](./CHANGELOG.md) — full version history
+- [RELEASE-CHECKLIST.md](./RELEASE-CHECKLIST.md) — cross-repo release checklist
+- [docs/VERSION-STRATEGY.md](./docs/VERSION-STRATEGY.md) — multi-version support strategy
+- [docs/deployment/deployment-guide.md](./docs/deployment/deployment-guide.md) — deployment guide
+- [docs/playbooks/add-new-version.md](./docs/playbooks/add-new-version.md) — adding new OCP version
+- [docs/playbooks/cherry-pick-fixes.md](./docs/playbooks/cherry-pick-fixes.md) — backport guide
 - [docs/BRANCH_PROTECTION.md](./docs/BRANCH_PROTECTION.md) — required checks
 - [docs/adrs/](./docs/adrs/) — Architectural Decision Records
 - [.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md) — development workflow

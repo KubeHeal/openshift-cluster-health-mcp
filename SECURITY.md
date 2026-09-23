@@ -16,11 +16,11 @@ The following table shows which versions of the OpenShift Cluster Health MCP Ser
 
 | OpenShift | Kubernetes | client-go    | Supported          |
 | --------- | ---------- | ------------ | ------------------ |
-| 4.22      | 1.35       | v0.35.x      | :white_check_mark: Target (see [#121](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/121)) |
-| 4.21      | 1.34       | v0.34.x      | :white_check_mark: |
-| 4.20      | 1.33       | v0.33.x      | :white_check_mark: |
-| 4.19      | 1.32       | v0.32.x      | :warning: Best effort (deprecated) |
-| 4.18      | 1.31       | v0.31.x      | :x: End of Life |
+| 4.22      | 1.35       | v0.35.x      | :white_check_mark: Current |
+| 4.21      | 1.34       | v0.34.x      | :white_check_mark: Supported |
+| 4.20      | 1.33       | v0.33.x      | :white_check_mark: Supported |
+| 4.19      | 1.32       | v0.32.x      | :warning: Maintenance only |
+| 4.18      | 1.31       | v0.31.x      | :x: End of life |
 | < 4.18    | < 1.31     | < v0.31.x    | :x: Not supported |
 
 See [ADR-010](docs/adrs/010-version-compatibility-upgrade-roadmap.md) for the full version compatibility matrix and upgrade roadmap.
@@ -37,7 +37,8 @@ See [ADR-010](docs/adrs/010-version-compatibility-upgrade-roadmap.md) for the fu
 
 | MCP Go SDK | Supported          |
 | ---------- | ------------------ |
-| v1.6.0     | :construction: Target (see [#124](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/124)) |
+| v1.8.0     | :white_check_mark: Current |
+| v1.6.0     | :white_check_mark: Supported |
 | v1.2.0     | :white_check_mark: Current |
 | < v1.0.0   | :x: Not supported |
 
@@ -79,7 +80,7 @@ If you discover a security vulnerability in this project, please report it respo
 
 - A fix will be developed and tested
 - A security advisory will be published on GitHub
-- The fix will be backported to all supported release branches (currently release-4.20, release-4.21, and the future release-4.22)
+- The fix will be backported to all supported release branches (currently release-4.20, release-4.21, and release-4.22)
 - Credit will be given to the reporter (unless they prefer anonymity)
 
 ### If Declined

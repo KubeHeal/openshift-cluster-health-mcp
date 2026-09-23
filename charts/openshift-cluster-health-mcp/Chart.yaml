@@ -16,3 +16,6 @@ maintainers:
 home: https://github.com/KubeHeal/openshift-cluster-health-mcp
 sources:
   - https://github.com/KubeHeal/openshift-cluster-health-mcp
+annotations:
+  openshift.io/supported-versions: "4.20,4.21,4.22"
+  kubernetes.io/supported-versions: "1.33,1.34,1.35"

@@ -62,10 +62,12 @@ For detailed development commands, see the [CLAUDE.md](../CLAUDE.md) file.
 
 This project maintains multiple branches for different OpenShift versions:
 
-- **`main`** - Primary development branch (OpenShift 4.18 / Kubernetes 1.31)
-- **`release-4.18`** - OpenShift 4.18 release branch
-- **`release-4.19`** - OpenShift 4.19 release branch (Kubernetes 1.32)
+- **`main`** - Primary development branch (auto-syncs to current release)
+- **`release-4.22`** - OpenShift 4.22 release branch (Kubernetes 1.35) — current
+- **`release-4.21`** - OpenShift 4.21 release branch (Kubernetes 1.34)
 - **`release-4.20`** - OpenShift 4.20 release branch (Kubernetes 1.33)
+- **`release-4.19`** - OpenShift 4.19 release branch (Kubernetes 1.32) — maintenance
+- **`release-4.18`** - OpenShift 4.18 release branch (Kubernetes 1.31) — end of life
 
 ### Which Branch to Target?
 
@@ -206,7 +208,7 @@ docs: update CONTRIBUTING.md with branch protection guidelines
 - All conversations must be resolved
 - Branch must be up-to-date with `main`
 
-### For Release Branches (`release-4.18`, `release-4.19`, `release-4.20`)
+### For Release Branches (`release-4.20`, `release-4.21`, `release-4.22`)
 - **2 approvals required** from code owners
 - All required status checks must pass
 - All conversations must be resolved

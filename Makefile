@@ -7,8 +7,8 @@
 BINARY_NAME=mcp-server
 VERSION?=0.1.0
 IMAGE_REGISTRY?=quay.io
-IMAGE_ORG?=openshift-aiops
-IMAGE_NAME=$(IMAGE_REGISTRY)/$(IMAGE_ORG)/cluster-health-mcp
+IMAGE_ORG?=takinosh
+IMAGE_NAME=$(IMAGE_REGISTRY)/$(IMAGE_ORG)/openshift-cluster-health-mcp
 GOPATH?=$(shell go env GOPATH)
 GOCMD=go
 GOBUILD=$(GOCMD) build
