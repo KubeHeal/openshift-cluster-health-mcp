@@ -81,7 +81,7 @@ func TestGetThrottledPodsTool_Execute_NoThrottling(t *testing.T) {
 			"anomalies":          []interface{}{},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -116,7 +116,7 @@ func TestGetThrottledPodsTool_Execute_WithEnrichedSignals(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -158,7 +158,7 @@ func TestGetThrottledPodsTool_Execute_PatternFallback(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
@@ -191,7 +191,7 @@ func TestGetThrottledPodsTool_Execute_CustomThreshold(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 	defer srv.Close()
 
