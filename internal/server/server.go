@@ -143,6 +143,10 @@ func (s *MCPServer) registerTools() error {
 	calculatePodCapacityTool := tools.NewCalculatePodCapacityTool(s.k8sClient)
 	s.registerTool(calculatePodCapacityTool)
 
+	// Register list-adrs tool (independent of CE — fetches from GitHub API)
+	listADRsTool := tools.NewListADRsTool(s.cache)
+	s.registerTool(listADRsTool)
+
 	// Register Coordination Engine tools if enabled
 	if s.ceClient != nil {
 		listIncidentsTool := tools.NewListIncidentsTool(s.ceClient)

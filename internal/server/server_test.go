@@ -86,7 +86,7 @@ func TestMCPServer_RegisterTools(t *testing.T) {
 	}()
 	defer server.cache.Close()
 
-	expectedTools := []string{"get-cluster-health", "list-pods", "calculate-pod-capacity"}
+	expectedTools := []string{"get-cluster-health", "list-pods", "calculate-pod-capacity", "list-adrs"}
 	for _, toolName := range expectedTools {
 		if _, exists := server.tools[toolName]; !exists {
 			t.Errorf("Expected tool %s to be registered", toolName)
@@ -253,13 +253,13 @@ func TestHandleListTools(t *testing.T) {
 		t.Fatal("Expected tools array in response")
 	}
 
-	if len(tools) != 3 {
-		t.Errorf("Expected 3 tools, got %d", len(tools))
+	if len(tools) != 4 {
+		t.Errorf("Expected 4 tools, got %d", len(tools))
 	}
 
 	count := int(result["count"].(float64))
-	if count != 3 {
-		t.Errorf("Expected count 3, got %d", count)
+	if count != 4 {
+		t.Errorf("Expected count 4, got %d", count)
 	}
 }
 
