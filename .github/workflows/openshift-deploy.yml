@@ -149,7 +149,7 @@ jobs:
           kubectl logs -l app=mcp-server -n ${{ inputs.namespace }} --tail=50
 
       - name: Upload test coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage.out
           flags: openshift-integration
