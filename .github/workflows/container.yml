@@ -64,6 +64,9 @@ jobs:
             release-4.21)
               echo "version=4.21" >> $GITHUB_OUTPUT
               ;;
+            release-4.22)
+              echo "version=4.22" >> $GITHUB_OUTPUT
+              ;;
             *)
               echo "version=dev" >> $GITHUB_OUTPUT
               ;;
