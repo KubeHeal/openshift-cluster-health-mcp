@@ -6,7 +6,9 @@
 
 **Original**: ACCEPTED - 2025-12-09
 
-**Amendment**: Changed from single-branch N-2 compatibility strategy to multi-branch approach with dedicated branches for each OpenShift version (main=4.18, release/4.19, release/4.20). This provides cleaner dependency management for Kubernetes client libraries.
+**Amendment 1**: Changed from single-branch N-2 compatibility strategy to multi-branch approach with dedicated branches for each OpenShift version (main=4.18, release/4.19, release/4.20). This provides cleaner dependency management for Kubernetes client libraries.
+
+**Amendment 2** (2026-09-23): Extended to cover OpenShift 4.21 and 4.22 (latest GA). Added release-4.21 and release-4.22 branches to the compatibility matrix. Updated Kubernetes version mapping through 4.22. Acknowledged that all branches currently share k8s.io v0.33.x — per-branch pinning is a tracked gap (see issue #125).
 
 ## Context
 
@@ -45,17 +47,19 @@ The OpenShift Cluster Health MCP Server must be compatible with the current Open
 
 ### Version Constraints
 
-**OpenShift Version Lifecycle**:
-- **4.18 Support**: General Availability (GA)
-- **4.19**: Next minor version (intermediate)
-- **4.20**: Latest stable release (December 2024)
-- **4.21**: Future (expected March 2025)
+**OpenShift Version Lifecycle** (updated 2026-09-23):
+- **4.18 Support**: End of Life — security fixes only
+- **4.19**: General Availability (GA)
+- **4.20**: General Availability (GA)
+- **4.21**: General Availability (GA)
+- **4.22**: Latest stable release (GA) — current target
 
 **Kubernetes Version Mapping** (verified from official Red Hat sources):
 - OpenShift 4.18 → Kubernetes 1.31
 - OpenShift 4.19 → Kubernetes 1.32
 - OpenShift 4.20 → Kubernetes 1.33
-- OpenShift 4.21 → Kubernetes 1.34 (expected)
+- OpenShift 4.21 → Kubernetes 1.34
+- OpenShift 4.22 → Kubernetes 1.35
 
 ### Current Challenges
 
@@ -77,21 +81,26 @@ We will adopt a **multi-branch version strategy** to manage compatibility with d
 - Clear separation of concerns for each OpenShift release
 - Easier testing and validation per version
 
-**Branch Structure**:
+**Branch Structure** (updated 2026-09-23):
 
 | Branch | OpenShift Version | Kubernetes Version | client-go Version | Status |
 |--------|------------------|-------------------|------------------|--------|
-| **main** | 4.18.x | v1.31.x | v0.31.x | **Active Development** ✅ |
-| **release/4.19** | 4.19.x | v1.32.x | v0.32.x | Future (Q1-Q2 2026) |
-| **release/4.20** | 4.20.x | v1.33.x | v0.33.x | Future (Q3-Q4 2026) |
+| **main** | 4.18.x | v1.31.x | v0.31.x (target) | Legacy base ⚠️ |
+| **release-4.18** | 4.18.x | v1.31.x | v0.31.x (target) | EOL — security fixes only |
+| **release-4.19** | 4.19.x | v1.32.x | v0.32.x (target) | Active ✅ |
+| **release-4.20** | 4.20.x | v1.33.x | v0.33.x (target) | Active ✅ |
+| **release-4.21** | 4.21.x | v1.34.x | v0.34.x (target) | Active ✅ |
+| **release-4.22** | 4.22.x | v1.35.x | v0.35.x (target) | Planned (see #121) |
+
+> **Note (2026-09-23)**: All branches currently use k8s.io v0.33.x. Per-branch version pinning has not been implemented. Issue #125 tracks whether to implement pinning or amend this strategy.
 
 **Branch Lifecycle**:
 ```
-main (4.18) ──────────┐
-                      ├─→ release/4.19 ──────────┐
-                      │                          ├─→ release/4.20
-                      │                          │
-Active Development    Future Branch              Future Branch
+main (4.18) ─→ release-4.18 (EOL)
+            ├─→ release-4.19 ─→ Active
+            ├─→ release-4.20 ─→ Active
+            ├─→ release-4.21 ─→ Active
+            └─→ release-4.22 ─→ Planned (#121)
 ```
 
 ### Compatibility Matrix
@@ -99,8 +108,11 @@ Active Development    Future Branch              Future Branch
 | Branch | Min OpenShift | Kubernetes | Go Version | client-go | k8s.io/api | k8s.io/apimachinery |
 |--------|---------------|------------|------------|-----------|------------|---------------------|
 | **main** | 4.18.21+ | v1.31.10+ | 1.24+ | v0.31.x | v0.31.x | v0.31.x |
-| **release/4.19** | 4.19.0+ | v1.32.x | 1.24+ | v0.32.x | v0.32.x | v0.32.x |
-| **release/4.20** | 4.20.0+ | v1.33.x | 1.24+ | v0.33.x | v0.33.x | v0.33.x |
+| **release-4.18** | 4.18.21+ | v1.31.x | 1.24+ | v0.31.x | v0.31.x | v0.31.x |
+| **release-4.19** | 4.19.0+ | v1.32.x | 1.24+ | v0.32.x | v0.32.x | v0.32.x |
+| **release-4.20** | 4.20.0+ | v1.33.x | 1.24+ | v0.33.x | v0.33.x | v0.33.x |
+| **release-4.21** | 4.21.0+ | v1.34.x | 1.24+ | v0.34.x | v0.34.x | v0.34.x |
+| **release-4.22** | 4.22.0+ | v1.35.x | 1.24+ | v0.35.x | v0.35.x | v0.35.x |
 
 **Compatibility Policy**:
 - Each branch targets a specific OpenShift major.minor version
@@ -429,17 +441,76 @@ oc adm top nodes
 
 ---
 
-### Phase 3: Maintain N-2 Compatibility (Months 12+)
+### Phase 3: OpenShift 4.20 → 4.21 (added 2026-09-23)
+
+**Timeline**: Q1-Q2 2026
+
+**Status**: Branch `release-4.21` created. k8s.io deps not yet aligned to v0.34.x (tracked by #125).
+
+**Key Changes**:
+- Kubernetes 1.34 features
+- Update client-go to v0.34.x for Kubernetes 1.34
+- MCP Go SDK upgrade to v1.6.0+ (tracked by #124)
+- Go 1.26 upgrade assessment (tracked by #128)
+
+**MCP Server Dependencies** (target):
+```go
+// go.mod for release-4.21
+require (
+    k8s.io/client-go v0.34.x
+    k8s.io/api v0.34.x
+    k8s.io/apimachinery v0.34.x
+    github.com/modelcontextprotocol/go-sdk v1.6.0+
+)
+```
+
+---
+
+### Phase 4: OpenShift 4.21 → 4.22 (added 2026-09-23)
+
+**Timeline**: Q3-Q4 2026 (v1.1.0 milestone, due 2026-10-31)
+
+**Status**: Branch `release-4.22` not yet created (tracked by #121).
+
+**Key Changes**:
+- Kubernetes 1.35 features
+- Update client-go to v0.35.x for Kubernetes 1.35
+- OpenShift 4.22 is the latest GA release as of Sep 2026
+- Drop OCP 4.18 support (EOL)
+
+**MCP Server Dependencies** (target):
+```go
+// go.mod for release-4.22
+require (
+    k8s.io/client-go v0.35.x
+    k8s.io/api v0.35.x
+    k8s.io/apimachinery v0.35.x
+    github.com/modelcontextprotocol/go-sdk v1.6.0+
+)
+```
+
+**Tracking Issues**:
+- #121: Add OCP 4.22 support (release branch, chart, CI)
+- #123: Update this ADR for 4.21/4.22
+- #124: MCP Go SDK v1.6.0 impact assessment
+- #125: k8s.io version alignment across branches
+- #127: Dependabot config for release-4.21 and release-4.22
+- #128: Go 1.26 upgrade assessment
+
+---
+
+### Phase 5: Maintain N-2 Compatibility (Ongoing, updated 2026-09-23)
 
 **Timeline**: Ongoing
 
-**Compatibility Policy**:
+**Compatibility Policy** (updated for OCP 4.22 GA):
 
 ```
-Current Release:   4.20 ✅ Fully supported
-Previous Release:  4.19 ✅ Supported
-N-2 Release:       4.18 ⚠️  Best effort (deprecated)
-Older:            4.17- ❌ Not supported
+Current Release:   4.22 ✅ Fully supported
+Previous Release:  4.21 ✅ Supported
+N-1 Release:       4.20 ✅ Supported
+N-2 Release:       4.19 ⚠️  Best effort (deprecated)
+Older:            4.18- ❌ EOL / Not supported
 ```
 
 **Testing Strategy**:
@@ -454,23 +525,23 @@ jobs:
   test-matrix:
     strategy:
       matrix:
-        openshift: ['4.18', '4.19', '4.20']
+        openshift: ['4.20', '4.21', '4.22']
         include:
-          - openshift: '4.18'
-            kubernetes: '1.31'
-            client-go: 'v0.31.x'
-          - openshift: '4.19'
-            kubernetes: '1.32'
-            client-go: 'v0.32.x'
           - openshift: '4.20'
             kubernetes: '1.33'
             client-go: 'v0.33.x'
+          - openshift: '4.21'
+            kubernetes: '1.34'
+            client-go: 'v0.34.x'
+          - openshift: '4.22'
+            kubernetes: '1.35'
+            client-go: 'v0.35.x'
 
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Run tests against ${{ matrix.openshift }}
         run: |
@@ -488,63 +559,58 @@ jobs:
 
 | OpenShift | Kubernetes | Status | Support Level |
 |-----------|------------|--------|---------------|
-| 4.20+     | 1.33+      | ✅ Supported | Full support |
-| 4.19      | 1.32       | ✅ Supported | Full support |
-| 4.18      | 1.31       | ⚠️  Deprecated | Security fixes only |
-| 4.17-     | 1.30-      | ❌ Unsupported | No support |
+| 4.22      | 1.35       | ✅ Supported | Full support (latest) |
+| 4.21      | 1.34       | ✅ Supported | Full support |
+| 4.20      | 1.33       | ✅ Supported | Full support |
+| 4.19      | 1.32       | ⚠️  Deprecated | Best effort |
+| 4.18-     | 1.31-      | ❌ EOL | No support |
 
 ## Minimum Requirements
-- **OpenShift**: 4.18+
-- **Kubernetes**: 1.31+
-- **Go**: 1.21+
+- **OpenShift**: 4.20+
+- **Kubernetes**: 1.33+
+- **Go**: 1.24+
 - **Helm**: 3.12+
 ```
 
 ## Go Version Strategy
 
-### Current: Go 1.21
+### Current: Go 1.24 (updated 2026-09-23)
 
 **Rationale**:
-- Kubernetes 1.31 officially supports Go 1.21
+- Kubernetes 1.33+ supports Go 1.24
+- MCP Go SDK v1.2.0 requires Go 1.22+
 - Stable release with good performance
-- All required features available
 
-**Dependencies**:
+**Dependencies** (as of 2026-09-23):
 ```go
 // go.mod
 module github.com/KubeHeal/openshift-cluster-health-mcp
 
-go 1.21
+go 1.24.0
+toolchain go1.24.11
 
 require (
-    github.com/modelcontextprotocol/go-sdk v0.x.x
-    k8s.io/client-go v0.31.10
-    k8s.io/api v0.31.10
-    k8s.io/apimachinery v0.31.10
-    github.com/prometheus/client_golang v1.18.0
+    github.com/modelcontextprotocol/go-sdk v1.2.0
+    k8s.io/client-go v0.33.7
+    k8s.io/api v0.33.7
+    k8s.io/apimachinery v0.33.7
 )
 ```
 
-### Future: Go 1.22 (6 months)
+### Target: Go 1.26 (tracked by #128)
 
-**When**: OpenShift 4.19 upgrade
+**When**: v1.1.0 milestone (OCP 4.22 readiness)
 
-**New Features**:
-- Enhanced generic type inference
-- Improved performance
-- Security improvements
+**Assessment needed**:
+- Go 1.25 and 1.26 release notes review
+- k8s.io and MCP Go SDK compatibility verification
+- Dependabot PR #73 (base image bump)
 
-### Future: Go 1.23 (12 months)
+## client-go Version Strategy (updated 2026-09-23)
 
-**When**: OpenShift 4.20+ stabilization
+### Current: v0.33.x (all branches)
 
-**Kubernetes 1.33 Recommendation**: Go 1.23+
-
-## client-go Version Strategy
-
-### Current: v0.31.x
-
-**Matches**: Kubernetes 1.31 (OpenShift 4.18)
+**Matches**: Kubernetes 1.33 (OpenShift 4.20)
 
 **Key APIs Used**:
 - `k8s.io/client-go/kubernetes`: Core K8s client
@@ -552,38 +618,37 @@ require (
 - `k8s.io/client-go/tools/clientcmd`: Kubeconfig handling
 - `k8s.io/apimachinery/pkg/apis/meta/v1`: Common types
 
-### Future: v0.32.x (6 months)
+> **Gap**: All branches use v0.33.x despite targeting different OCP versions. Issue #125 tracks alignment.
 
-**Matches**: Kubernetes 1.32 (OpenShift 4.19)
+### Target: v0.34.x (release-4.21)
 
-### Future: v0.33.x (12 months)
+**Matches**: Kubernetes 1.34 (OpenShift 4.21)
 
-**Matches**: Kubernetes 1.33 (OpenShift 4.20)
+### Target: v0.35.x (release-4.22)
 
-**Migration Plan**:
-1. Update go.mod dependencies
+**Matches**: Kubernetes 1.35 (OpenShift 4.22)
+
+**Migration Plan** (per branch):
+1. Update go.mod dependencies to target version
 2. Run compatibility tests
-3. Review API deprecations
+3. Review API deprecations for target K8s version
 4. Update type assertions if needed
-5. Test against 4.19/4.20 dev cluster
+5. Test against target OCP version cluster
 
 **Breaking Changes Check**:
 ```bash
 # Check for deprecated APIs
 go list -m -u all | grep k8s.io
 
-# Update dependencies for 4.19 (K8s 1.32)
-go get k8s.io/client-go@v0.32.0
-go get k8s.io/api@v0.32.0
-go get k8s.io/apimachinery@v0.32.0
+# Update dependencies for 4.21 (K8s 1.34)
+go get k8s.io/client-go@v0.34.0
+go get k8s.io/api@v0.34.0
+go get k8s.io/apimachinery@v0.34.0
 
-# Update dependencies for 4.20 (K8s 1.33)
-go get k8s.io/client-go@v0.33.0
-go get k8s.io/api@v0.33.0
-go get k8s.io/apimachinery@v0.33.0
-
-# Vendor if needed
-go mod vendor
+# Update dependencies for 4.22 (K8s 1.35)
+go get k8s.io/client-go@v0.35.0
+go get k8s.io/api@v0.35.0
+go get k8s.io/apimachinery@v0.35.0
 
 # Test
 make test
@@ -804,11 +869,23 @@ Before each OpenShift upgrade:
 - ✅ All integrations working
 - ✅ N-2 compatibility maintained (4.18, 4.19, 4.20)
 
-### Phase 3 Success (Ongoing)
-- ✅ CI/CD testing across 3 versions
-- ✅ Clear version documentation
-- ✅ Regular upgrade cadence (every 6 months)
-- ✅ Zero breaking changes for supported versions
+### Phase 3 Success (OpenShift 4.20 → 4.21)
+- ⬜ release-4.21 branch created (done)
+- ⬜ client-go updated to v0.34.x on release-4.21
+- ⬜ MCP Go SDK updated to v1.6.0+ (#124)
+- ⬜ All integrations working on 4.21
+
+### Phase 4 Success (OpenShift 4.21 → 4.22)
+- ⬜ release-4.22 branch created (#121)
+- ⬜ client-go updated to v0.35.x on release-4.22
+- ⬜ Helm chart updated for 4.22
+- ⬜ CI matrix covers 4.20, 4.21, 4.22
+
+### Phase 5 Success (Ongoing)
+- ⬜ CI/CD testing across 3 supported versions (4.20, 4.21, 4.22)
+- ⬜ Clear version documentation
+- ⬜ Regular upgrade cadence (every 6 months)
+- ⬜ Zero breaking changes for supported versions
 
 ## Related ADRs
 
