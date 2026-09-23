@@ -121,14 +121,14 @@ jobs:
             echo "Upgrading existing release..."
             helm upgrade mcp-server ./charts/openshift-cluster-health-mcp \
               --namespace ${{ inputs.namespace }} \
-              --set image.tag=${{ inputs.openshift_version }}-latest \
+              --set image.tag=ocp-${{ inputs.openshift_version }}-latest \
               --wait
           else
             echo "Installing new release..."
             helm install mcp-server ./charts/openshift-cluster-health-mcp \
               --namespace ${{ inputs.namespace }} \
               --create-namespace \
-              --set image.tag=${{ inputs.openshift_version }}-latest \
+              --set image.tag=ocp-${{ inputs.openshift_version }}-latest \
               --wait
           fi
 
