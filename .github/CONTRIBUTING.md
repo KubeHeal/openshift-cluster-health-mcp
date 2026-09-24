@@ -300,12 +300,21 @@ go test -v ./internal/tools -run TestClusterHealthTool
 3. **Tool naming**: Use kebab-case (e.g., `get-cluster-health`)
 4. **Resource URIs**: Follow pattern `scheme://path` (e.g., `cluster://health`)
 
+## Releasing
+
+For cutting a tagged release, see [RELEASE.md](../RELEASE.md). It covers the
+versioning policy, the OCP compatibility matrix, the full release checklist
+(CHANGELOG → tag → `container.yml` image publish → optional deploy), and the
+branch protection gates defined in
+[docs/BRANCH_PROTECTION.md](../docs/BRANCH_PROTECTION.md).
+
 ## Documentation Requirements
 
 When adding new features or making significant changes, update:
 
 - **README.md** - High-level overview and quick start
 - **CLAUDE.md** - Detailed development instructions
+- **[RELEASE.md](../RELEASE.md)** - Release checklist and versioning policy
 - **Code comments** - Document exported functions and complex logic
 - **ADRs** - Create Architecture Decision Record for significant architectural choices (see `docs/adrs/`)
 
