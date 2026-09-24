@@ -79,9 +79,9 @@ flowchart TB
 
   subgraph mcpServer ["MCP Server (Go)"]
     handler["HTTP/SSE Handler"]
-    toolReg["Tool Registry (14 tools)"]
+    toolReg["Tool Registry (17 tools)"]
     resReg["Resource Registry (4 resources)"]
-    promptReg["Prompt Registry (7 prompts)"]
+    promptReg["Prompt Registry (6 prompts)"]
     sessionMgr["Session Manager"]
     memCache["In-Memory Cache"]
   end
@@ -128,9 +128,9 @@ The server decomposes into seven packages. The `internal/` packages hold applica
 | Building block | Package | Responsibility |
 |----------------|---------|----------------|
 | Server core | `internal/server/` | HTTP routing, MCP SDK integration, session management, configuration. |
-| MCP tools | `internal/tools/` | 14 tools that perform active operations (query, analyze, trigger). |
+| MCP tools | `internal/tools/` | 17 tools that perform active operations (query, analyze, trigger). |
 | MCP resources | `internal/resources/` | 4 resources that expose passive, cacheable data. |
-| MCP prompts | `internal/prompts/` | 7 prompt templates for common AI assistant workflows. |
+| MCP prompts | `internal/prompts/` | 6 prompt templates for common AI assistant workflows. |
 | API clients | `pkg/clients/` | Kubernetes, Coordination Engine, KServe HTTP clients with retry logic. |
 | Cache | `pkg/cache/` | In-memory TTL cache with background cleanup. |
 | Capacity | `pkg/capacity/` | Pod capacity calculator for namespace and cluster planning. |
@@ -145,7 +145,7 @@ flowchart TB
     server["server/\nconfig, server, session"]
     toolsPkg["tools/\n14 MCP tools"]
     resourcesPkg["resources/\n4 MCP resources"]
-    promptsPkg["prompts/\n7 MCP prompts"]
+    promptsPkg["prompts/\n6 MCP prompts"]
   end
 
   subgraph pkgLayer ["pkg/"]
@@ -178,27 +178,31 @@ openshift-cluster-health-mcp/
       config.go          # Environment-based configuration
       server.go          # Core server with tool/resource registration
       session.go         # Session manager (30-min TTL)
-    tools/               # 14 MCP tool implementations
+    tools/               # 17 MCP tool implementations
       cluster_health.go         get-cluster-health
       list_pods.go              list-pods
+      calculate_pod_capacity.go calculate-pod-capacity
+      list_adrs.go              list-adrs
       analyze_anomalies.go      analyze-anomalies
       predict_resource_usage.go predict-resource-usage
       analyze_scaling_impact.go analyze-scaling-impact
-      calculate_pod_capacity.go calculate-pod-capacity
       list_incidents.go         list-incidents
       create_incident.go        create-incident
       trigger_remediation.go    trigger-remediation
-      model_status.go           get-model-status
-      list_models.go            list-models
+      get_remediation_recommendations.go get-remediation-recommendations
       get_throttled_pods.go     get-throttled-pods
       predict_disk_exhaustion.go predict-disk-exhaustion
       get_rightsizing_recommendations.go get-rightsizing-recommendations
+      investigate_rca.go        investigate-rca
+      model_status.go           get-model-status
+      list_models.go            list-models
     resources/           # 4 MCP resource implementations
       cluster_health.go  cluster://health (10s TTL)
       nodes.go           cluster://nodes (30s TTL)
       incidents.go       cluster://incidents (5s TTL)
+      remediation_history.go cluster://remediation-history (30s TTL)
       remediation_history.go cluster://remediation-history
-    prompts/             # 7 MCP prompt templates
+    prompts/             # 6 MCP prompt templates
   pkg/
     clients/
       kubernetes.go      # K8s client (in-cluster or kubeconfig)
@@ -223,18 +227,21 @@ openshift-cluster-health-mcp/
 |------|---------|--------|-------------|
 | `get-cluster-health` | K8s API | Yes (10s) | Cluster health snapshot: node and pod counts, status. |
 | `list-pods` | K8s API | No | Pod listing with namespace and status filters. |
-| `analyze-anomalies` | K8s + KServe | No | ML-based anomaly detection on cluster metrics. |
-| `predict-resource-usage` | K8s + KServe | No | Time-specific CPU/memory forecasting. |
-| `analyze-scaling-impact` | K8s | No | Replica scaling impact analysis. |
-| `calculate-pod-capacity` | K8s | No | Namespace or cluster pod capacity planning. |
+| `calculate-pod-capacity` | K8s API | No | Namespace or cluster pod capacity planning. |
+| `list-adrs` | GitHub API | Yes (5m) | CE ADR index with optional status filter. |
 | `list-incidents` | CE | No | Active incidents from Coordination Engine. |
 | `create-incident` | CE | No | Create a new incident in Coordination Engine. |
-| `trigger-remediation` | CE | No | Start an automated remediation workflow. |
+| `trigger-remediation` | CE | No | Automated remediation with OOMKill memory patching. |
+| `get-remediation-recommendations` | CE | No | ML-powered remediation recommendations. |
+| `predict-resource-usage` | CE | No | Time-specific CPU/memory forecasting with capacity forecast. |
+| `analyze-scaling-impact` | CE | No | Replica scaling impact analysis. |
+| `get-throttled-pods` | CE | No | Pods with high CPU throttling (CFS metrics). |
+| `predict-disk-exhaustion` | CE | No | Disk usage trend prediction with urgency classification. |
+| `get-rightsizing-recommendations` | CE | No | Per-container CPU/memory right-sizing via P95 usage. |
+| `investigate-rca` | CE | No | Deep root-cause analysis correlating pod events, NetworkPolicy, Istio. |
+| `analyze-anomalies` | CE + KServe | No | ML-based anomaly detection with enriched signals. |
 | `get-model-status` | KServe | Yes (20s) | KServe InferenceService health. |
 | `list-models` | KServe | Yes (20s) | List available KServe models. |
-| `get-throttled-pods` | K8s | No | Find CPU/memory throttled pods. |
-| `predict-disk-exhaustion` | K8s + KServe | No | Disk usage trend prediction. |
-| `get-rightsizing-recommendations` | K8s | No | Container resource right-sizing suggestions. |
 
 ---
 
@@ -348,7 +355,7 @@ flowchart LR
 ```
 
 **Runtime details:**
-- Container image: `quay.io/takinosh/openshift-cluster-health-mcp:4.20-latest`
+- Container image: `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.22-latest`
 - Resources: 64 Mi request, 128 Mi limit (memory). 50m request, 200m limit (CPU).
 - Probes: `/health` endpoint for liveness (30s interval) and readiness (10s interval).
 - Security: `allowPrivilegeEscalation: false`, all capabilities dropped, `restricted-v2` SCC.

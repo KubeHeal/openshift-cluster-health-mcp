@@ -8,25 +8,68 @@ Model Context Protocol (MCP) server for OpenShift cluster health monitoring and 
 
 ## Features
 
-- **MCP Tools**: 7 tools for cluster operations and AI-powered analysis
-  - `get-cluster-health` - Real-time cluster health snapshot
-  - `list-pods` - Pod listing with advanced filtering
-  - `list-incidents` - Active incident tracking via Coordination Engine
-  - `trigger-remediation` - Automated remediation actions
-  - `analyze-anomalies` - ML-powered anomaly detection via KServe
-  - `get-model-status` - KServe model health monitoring
-  - `predict-resource-usage` - Time-specific resource usage forecasting via ML models
+### MCP Tools (17 total)
 
-- **MCP Resources**: 3 resources for passive data access
-  - `cluster://health` - Real-time cluster health (10s cache)
-  - `cluster://nodes` - Node information and capacity (30s cache)
-  - `cluster://incidents` - Active incidents from Coordination Engine (5s cache)
+The server registers up to 17 tools depending on which integrations are enabled.
 
-- **Integrations**:
-  - ✅ Kubernetes API (required)
-  - ✅ Coordination Engine (optional - incident management)
-  - ✅ KServe (optional - ML model serving)
-  - ✅ Prometheus (optional - enhanced metrics)
+**Always available (4 tools):**
+
+| Tool | Description |
+|------|-------------|
+| `get-cluster-health` | Real-time cluster health snapshot (nodes, pods, status). |
+| `list-pods` | Pod listing with namespace and status filters. |
+| `calculate-pod-capacity` | Namespace or cluster pod capacity planning. |
+| `list-adrs` | Coordination Engine ADR index from GitHub API (5-min cache). |
+
+**Requires Coordination Engine (10 tools):**
+
+| Tool | Description |
+|------|-------------|
+| `list-incidents` | Active incident tracking. |
+| `create-incident` | Create a new incident for manual tracking. |
+| `trigger-remediation` | Automated remediation with OOMKill memory patching (CE v1.2.0). |
+| `get-remediation-recommendations` | ML-powered remediation recommendations. |
+| `predict-resource-usage` | Time-specific CPU/memory forecasting with capacity forecast. |
+| `analyze-scaling-impact` | Replica scaling impact analysis. |
+| `get-throttled-pods` | Identifies pods with high CPU throttling (CFS metrics). |
+| `predict-disk-exhaustion` | Forecasts filesystem full dates with urgency classification. |
+| `get-rightsizing-recommendations` | Per-container CPU/memory right-sizing via P95 usage. |
+| `investigate-rca` | Deep root-cause analysis correlating pod events, NetworkPolicy, and Istio (CE v1.2.0). |
+
+**Requires KServe (3 tools):**
+
+| Tool | Description |
+|------|-------------|
+| `analyze-anomalies` | ML-powered anomaly detection with enriched signals (also requires CE). |
+| `get-model-status` | KServe InferenceService health. |
+| `list-models` | List available KServe models. |
+
+### MCP Resources (4 total)
+
+| Resource | Cache TTL | Requires |
+|----------|-----------|----------|
+| `cluster://health` | 10s | Always available |
+| `cluster://nodes` | 30s | Always available |
+| `cluster://incidents` | 5s | Coordination Engine |
+| `cluster://remediation-history` | 30s | Coordination Engine |
+
+### MCP Prompts (6 total)
+
+| Prompt | Requires |
+|--------|----------|
+| `diagnose-cluster` | Always available |
+| `investigate-pods` | Always available |
+| `check-anomalies` | Always available |
+| `optimize-data-access` | Always available |
+| `predict-and-prevent` | Coordination Engine |
+| `correlate-incidents` | Coordination Engine |
+
+### Integrations
+
+- Kubernetes API (required)
+- Coordination Engine (optional, incident management and AIOps)
+- KServe (optional, ML model serving)
+- Prometheus (Phase 3, not yet implemented)
 
 ## Architecture
 
@@ -40,24 +83,29 @@ Model Context Protocol (MCP) server for OpenShift cluster health monitoring and 
 │  OpenShift Cluster Health MCP Server                    │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐ │
 │  │ MCP Tools   │  │ MCP Resources│  │ Cache (30s TTL)│ │
-│  │ (7 total)   │  │ (3 total)    │  │                │ │
+│  │ (17 total)  │  │ (4 total)    │  │                │ │
 │  └─────────────┘  └──────────────┘  └────────────────┘ │
-└──────┬──────────────┬──────────────┬──────────────┬─────┘
-       │              │              │              │
-┌──────▼──────┐ ┌────▼─────┐ ┌──────▼──────┐ ┌────▼────────┐
-│ Kubernetes  │ │Coordination│ │   KServe    │ │ Prometheus  │
-│ API         │ │ Engine     │ │  (ML Models)│ │   (Metrics) │
-└─────────────┘ └──────────┘ └─────────────┘ └─────────────┘
+│  ┌─────────────┐                                        │
+│  │ MCP Prompts │                                        │
+│  │ (6 total)   │                                        │
+│  └─────────────┘                                        │
+└──────┬──────────────┬──────────────┬────────────────────┘
+       │              │              │
+┌──────▼──────┐ ┌────▼──────┐ ┌─────▼───────┐
+│ Kubernetes  │ │Coordination│ │   KServe    │
+│ API         │ │ Engine     │ │  (ML Models)│
+└─────────────┘ └───────────┘ └─────────────┘
 ```
 
 ## Version Compatibility
 
 | OpenShift Version | Kubernetes Version | Container Image | Status |
 |-------------------|-------------------|-----------------|--------|
-| **4.21** | 1.34 | `quay.io/takinosh/openshift-cluster-health-mcp:4.21-latest` | ✅ Supported (Current) |
-| **4.20** | 1.33 | `quay.io/takinosh/openshift-cluster-health-mcp:4.20-latest` | ✅ Supported |
-| **4.19** | 1.32 | `quay.io/takinosh/openshift-cluster-health-mcp:4.19-latest` | ✅ Supported |
-| **4.18** | 1.31 | `quay.io/takinosh/openshift-cluster-health-mcp:4.18-latest` | ⚠️ Maintenance |
+| **4.22** | 1.35 | `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.22-latest` | Current |
+| **4.21** | 1.34 | `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.21-latest` | Supported |
+| **4.20** | 1.33 | `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.20-latest` | Supported |
+| **4.19** | 1.32 | `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.19-latest` | Maintenance |
+| **4.18** | 1.31 | `quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.18-latest` | End of Life |
 
 **📚 [Complete Installation Guide](./docs/INSTALLATION.md)** - Detailed instructions for installing the MCP server for each OpenShift version.
 
@@ -65,7 +113,7 @@ Model Context Protocol (MCP) server for OpenShift cluster health monitoring and 
 
 ### Prerequisites
 
-- OpenShift 4.19+ recommended (4.21 current; see version compatibility table above)
+- OpenShift 4.20+ recommended (4.22 current; see version compatibility table above)
 - Go 1.24+ (for local development)
 - Helm 3.0+
 - kubectl/oc CLI
@@ -107,7 +155,7 @@ helm install mcp-server ./charts/openshift-cluster-health-mcp \
   --namespace self-healing-platform \
   --create-namespace \
   --set image.repository=quay.io/takinosh/openshift-cluster-health-mcp \
-  --set image.tag=4.21-latest  # Use 4.19-latest, 4.20-latest, or 4.21-latest
+  --set image.tag=ocp-4.22-latest  # Use ocp-4.20-latest, ocp-4.21-latest, or ocp-4.22-latest
 
 # Verify deployment
 oc get pods -n self-healing-platform
@@ -145,19 +193,19 @@ For pre-release validation or testing against real OpenShift clusters, use the m
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `MCP_TRANSPORT` | Transport mode (http or stdio) | `http` | Yes |
-| `MCP_HTTP_PORT` | HTTP server port | `8080` | If HTTP |
+| `MCP_TRANSPORT` | Transport mode (only `http` supported; stdio is deprecated) | `http` | No |
+| `MCP_HTTP_PORT` | HTTP server port | `8080` | No |
 | `LOG_LEVEL` | Logging level (debug, info, warn, error) | `info` | No |
 | `LOG_FORMAT` | Log format (json or text) | `json` | No |
 | `ENABLE_COORDINATION_ENGINE` | Enable Coordination Engine integration | `false` | No |
 | `COORDINATION_ENGINE_URL` | Coordination Engine endpoint | - | If CE enabled |
-
-> **Coordination Engine version compatibility**: CE v1.0.0 supports core incident and remediation tools. CE v1.1.0 adds enriched anomaly signals, disk exhaustion prediction, rightsizing, and capacity forecasting. CE v1.2.0 adds deep RCA investigation and OOMKill memory patching. See [ADR-010](docs/adrs/010-version-compatibility-upgrade-roadmap.md#coordination-engine-version-compatibility) for the full compatibility matrix.
 | `ENABLE_KSERVE` | Enable KServe integration | `false` | No |
 | `KSERVE_NAMESPACE` | Namespace for KServe models | `self-healing-platform` | If KServe enabled |
 | `KSERVE_PREDICTOR_PORT` | KServe predictor port (8080 for RawDeployment, 80 for Serverless) | `8080` | No |
-| `ENABLE_PROMETHEUS` | Enable Prometheus integration | `false` | No |
-| `PROMETHEUS_URL` | Prometheus endpoint | - | If Prom enabled |
+| `ENABLE_PROMETHEUS` | Enable Prometheus integration (Phase 3, not yet implemented) | `false` | No |
+| `PROMETHEUS_URL` | Prometheus endpoint (Phase 3, not yet implemented) | - | If Prom enabled |
+
+> **Coordination Engine compatibility:** CE v1.0.0 supports core incident and remediation tools. CE v1.1.0 adds enriched anomaly signals, disk prediction, rightsizing, and capacity forecasting. CE v1.2.0 adds deep RCA investigation and OOMKill memory patching. See [ADR-010](docs/adrs/010-version-compatibility-upgrade-roadmap.md#coordination-engine-version-compatibility) for the full compatibility matrix.
 
 ### Helm Values
 
@@ -201,13 +249,18 @@ curl http://localhost:8080/mcp/tools
 # List available resources
 curl http://localhost:8080/mcp/resources
 
-# Get cluster health resource
-curl http://localhost:8080/mcp/resources/cluster/health
+# Create a session (required for tool/resource calls)
+curl -X POST http://localhost:8080/mcp/session \
+  -H 'Content-Type: application/json' \
+  -d '{"client": "my-client"}'
 
-# Execute tool
-curl -X POST http://localhost:8080/mcp/tools/get-cluster-health \
+# Execute a tool (replace SESSION_ID with the session_id from above)
+curl -X POST "http://localhost:8080/mcp/tools/get-cluster-health/call?sessionid=SESSION_ID" \
   -H 'Content-Type: application/json' \
   -d '{}'
+
+# Read a resource
+curl "http://localhost:8080/mcp/resources/cluster%3A%2F%2Fhealth/read?sessionid=SESSION_ID"
 ```
 
 ### MCP Client Integration

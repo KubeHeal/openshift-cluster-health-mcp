@@ -6,13 +6,15 @@ This guide explains how to install the OpenShift Cluster Health MCP Server for d
 
 The MCP server is released with version-specific container images to ensure compatibility with your OpenShift cluster:
 
-| OpenShift Version | Kubernetes Version | Container Image Tag | Branch |
-|-------------------|-------------------|---------------------|--------|
-| **OpenShift 4.18** | Kubernetes 1.31 | `4.18-latest` | `release-4.18` |
-| **OpenShift 4.19** | Kubernetes 1.31 | `4.19-latest` | `release-4.19` |
-| **OpenShift 4.20** | Kubernetes 1.33 | `4.20-latest` | `release-4.20` |
+| OpenShift Version | Kubernetes Version | Container Image Tag | Branch | Status |
+|-------------------|-------------------|---------------------|--------|--------|
+| **OpenShift 4.22** | Kubernetes 1.35 | `ocp-4.22-latest` | `release-4.22` | Current |
+| **OpenShift 4.21** | Kubernetes 1.34 | `ocp-4.21-latest` | `release-4.21` | Supported |
+| **OpenShift 4.20** | Kubernetes 1.33 | `ocp-4.20-latest` | `release-4.20` | Supported |
+| **OpenShift 4.19** | Kubernetes 1.32 | `ocp-4.19-latest` | `release-4.19` | Maintenance |
+| **OpenShift 4.18** | Kubernetes 1.31 | `ocp-4.18-latest` | `release-4.18` | End of Life |
 
-**Important**: Always use the container image that matches your OpenShift cluster version to avoid API compatibility issues.
+**Important**: Always use the container image tag that matches your OpenShift cluster version to avoid API compatibility issues.
 
 ## Installation Methods
 
@@ -32,12 +34,12 @@ oc version
 
 Create a `values-<version>.yaml` file:
 
-**For OpenShift 4.18:**
+**For OpenShift 4.21:**
 ```yaml
-# values-4.18.yaml
+# values-4.21.yaml
 image:
   repository: quay.io/takinosh/openshift-cluster-health-mcp
-  tag: "4.18-latest"
+  tag: "ocp-4.21-latest"
   pullPolicy: Always
 
 replicaCount: 1
@@ -56,12 +58,12 @@ resources:
     memory: 128Mi
 ```
 
-**For OpenShift 4.19:**
+**For OpenShift 4.22:**
 ```yaml
-# values-4.19.yaml
+# values-4.22.yaml
 image:
   repository: quay.io/takinosh/openshift-cluster-health-mcp
-  tag: "4.19-latest"
+  tag: "ocp-4.22-latest"
   pullPolicy: Always
 
 replicaCount: 1
@@ -85,7 +87,7 @@ resources:
 # values-4.20.yaml
 image:
   repository: quay.io/takinosh/openshift-cluster-health-mcp
-  tag: "4.20-latest"
+  tag: "ocp-4.20-latest"
   pullPolicy: Always
 
 replicaCount: 1
@@ -110,12 +112,12 @@ resources:
 # Create namespace
 oc new-project self-healing-platform
 
-# Install the chart (replace 4.20 with your version)
+# Install the chart (replace 4.22 with your version)
 # Default service name: mcp-server on port 8080
 helm install mcp-server \
   ./charts/openshift-cluster-health-mcp \
   --namespace self-healing-platform \
-  --values values-4.20.yaml
+  --values values-4.22.yaml
 
 # Verify installation
 oc get pods -n self-healing-platform
@@ -140,7 +142,7 @@ curl http://localhost:8080/mcp/tools
 
 For testing or non-Helm deployments:
 
-#### OpenShift 4.20 Example
+#### OpenShift 4.22 Example
 
 ```bash
 # Create deployment
@@ -165,7 +167,7 @@ spec:
       serviceAccountName: mcp-server
       containers:
       - name: mcp-server
-        image: quay.io/takinosh/openshift-cluster-health-mcp:4.20-latest
+        image: quay.io/takinosh/openshift-cluster-health-mcp:ocp-4.22-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
