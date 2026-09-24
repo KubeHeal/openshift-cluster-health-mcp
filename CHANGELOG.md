@@ -7,13 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned — v0.3.0 (Tracked Issues)
-- CI gate: verify v0.1.0 tag passes all required checks, enforce branch protection — [#107](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/107)
+### Planned
 - ADR documentation compliance gaps (9/10 score items) — [#116](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/116) `good first issue`
 - Dev container for one-click Codespaces development — [#117](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/117) `good first issue`
-- OCP 4.22 support: add `release-4.22` branch, update CI matrix (Kubernetes 1.35), move 4.18 to end-of-life
 
-## [0.2.0] - 2026-04-21
+## [1.2.0] - 2026-09-24
+
+### Changed — OCP 4.22 GA Release
+This release marks the production-ready v1.x line for OpenShift 4.22.
+
+### Dependencies
+- Bumped `github.com/modelcontextprotocol/go-sdk` from 1.6.0 to 1.8.0 — security hardening (JSON depth limits, SSE event size caps, request body bounds), session leak fixes, per-request cache control
+- Bumped `github.com/stretchr/testify` from 1.11.1 to 1.11.2
+- Bumped `actions/setup-go` from 6 to 7
+
+### Fixed
+- Release branch CI: `NodesResource` tests now skip gracefully when no Kubernetes cluster is available (replaced `require.NoError` with `t.Skipf`)
+- Release branch CI: OpenShift `oc login` step now uses `continue-on-error` so stale cluster credentials don't block the entire CI pipeline
+
+### Documentation
+- Linked `RELEASE.md` from `.github/CONTRIBUTING.md` (completing [#108](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/108) acceptance criteria)
+- Audited and remediated stale documentation across 6 files ([#180](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/180))
+
+## [1.1.0] - 2026-09-23
+
+### Changed — Infrastructure & Maintenance
+
+### Infrastructure
+- Upgraded Go from 1.24 to 1.26 across all CI workflows and Docker images
+- Added OCP 4.22 support: `release-4.22` branch, Kubernetes 1.35 compatibility, updated CI matrix. Closes [#121](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/121)
+- Added Apache 2.0 LICENSE file
+- Added Dependabot auto-merge workflow and k8s.io dependency grouping
+- Mirrored coordination-engine release process (RELEASE.md, RELEASE-CHECKLIST.md, VERSION-STRATEGY.md, playbooks)
+
+### Dependencies
+- Bumped `actions/checkout` from 6 to 7
+- Bumped `codecov/codecov-action` from 5 to 7
+- Bumped `dependabot/fetch-metadata` from 2 to 3
+
+### Documentation
+- Added `DESIGN_DOC.md` (arc42 software design document). Closes [#131](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/131)
+- Added `SECURITY.md` with supported version matrix and vulnerability reporting policy. Closes [#129](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/129)
+
+## [0.2.0] - 2026-09-23
 
 ### Added — AIOps Use Case Tools
 
@@ -67,6 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional KServe integration via `ENABLE_KSERVE` environment variable
 - OCP-version image tagging strategy: `quay.io/takinosh/openshift-cluster-health-mcp:4.x-latest`
 
-[Unreleased]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.2.0...v1.1.0
 [0.2.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/releases/tag/v0.1.0
