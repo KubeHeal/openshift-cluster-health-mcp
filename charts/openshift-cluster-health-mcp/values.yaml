@@ -19,7 +19,7 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "mcp-server"
 
-# MCP Transport configuration (http or stdio)
+# MCP Transport configuration (only http is supported; stdio is deprecated)
 transport: http  # Use http for OpenShift Lightspeed integration
 httpPort: 8080
 

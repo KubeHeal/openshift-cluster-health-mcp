@@ -9,32 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned — v0.3.0 (Tracked Issues)
 - CI gate: verify v0.1.0 tag passes all required checks, enforce branch protection — [#107](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/107)
-- `list-adrs` tool for AI reasoning about architectural decisions — [#115](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/115) `good first issue`
 - ADR documentation compliance gaps (9/10 score items) — [#116](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/116) `good first issue`
 - Dev container for one-click Codespaces development — [#117](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/117) `good first issue`
-- OCP 4.21 support: add `release-4.21` branch, update CI matrix (Kubernetes 1.34), move 4.18 to maintenance-only
+- OCP 4.22 support: add `release-4.22` branch, update CI matrix (Kubernetes 1.35), move 4.18 to end-of-life
 
 ## [0.2.0] - 2026-04-21
 
-### Added — AIOps Use Case Tools (CE v1.1.0 integration)
+### Added — AIOps Use Case Tools
 
-#### New Tools
+#### CE v1.1.0 Integration — New Tools
 - **`get-throttled-pods`**: Identifies pods with high CPU throttling using CFS-based metrics from CE ADR-020. Surfaces `cpu_throttle_rate` from `enriched_signals`; fallback to per-pattern `throttle_rate_pct` metadata. Configurable threshold (default 25%). Closes [#109](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/109)
 - **`predict-disk-exhaustion`**: Forecasts filesystem full dates via CE ADR-018 `deriv()` analysis. Returns days-until-full, urgency classification (`critical`/`warning`/`info`/`stable`), projected full date, and daily fill rate per filesystem. Closes [#110](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/110)
 - **`get-rightsizing-recommendations`**: Per-container CPU/memory right-sizing via CE ADR-019. Compares P95 usage against current requests/limits with 20%/50% headroom. Classifies containers as over-provisioned, under-provisioned, or right-sized. Configurable analysis window (7d/14d/30d/90d). Closes [#111](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/111)
+- **`list-adrs`**: Fetches the CE ADR index from GitHub Contents API, parses the markdown table, and returns structured ADR metadata. Supports optional status filter. 5-minute cache TTL. Closes [#115](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/115)
+
+#### CE v1.2.0 Integration — New Tools
+- **`investigate-rca`**: Deep root-cause analysis correlating pod events, NetworkPolicy logs, and Istio traffic via CE `POST /api/v1/investigate/rca`. Returns root causes with confidence scores and correlated signals. Closes [#175](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/175)
 
 #### Updated Tools
 - **`analyze-anomalies`**: Now surfaces `enriched_signals` object when CE v1.1.0 returns application-level signals (ADR-017). Includes `cpu_throttle_rate_pct`, `http_error_rate_pct`, `http_response_time_p99_ms`, `throttling_detected`, `http_degraded`. Closes [#112](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/112)
 - **`predict-resource-usage`**: Enriched with `capacity_forecast` block containing `forecasted_exhaustion_days` and `recommended_replica_increase` from CE `/api/v1/capacity/trends` (use case 5). Enrichment is best-effort; prediction still returned if CE endpoint unavailable. Closes [#113](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/113)
+- **`trigger-remediation`**: OOMKill memory patching context added (CE v1.2.0). When `issue_type` is `oom_kill`, the response includes `OOMKillDetected` flag and `OOMKillAdvice` with memory patch guidance. Closes [#176](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/176)
 
 #### Client Updates (`pkg/clients/coordination_engine.go`)
 - Added `EnrichedSignals` struct mirroring CE ADR-017 response fields
 - Added `CapacityTrendingResponse` struct with `ForecastedExhaustionDays` and `RecommendedReplicaIncrease`
 - Added `GetCapacityTrends(ctx, namespace)` method calling `GET /api/v1/capacity/trends`
+- Added RCA types (`RCARootCause`, `RCACorrelatorStat`, `RCATimeRange`, `RCAResponse`, `RCARequest`) and `InvestigateRCA()` method
 
 ### Documentation
 - `CHANGELOG.md` v0.2.0 section (this entry). Closes [#114](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/114)
 - `RELEASE.md` added with release runbook and branch protection references. Closes [#108](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/108)
+- CE Version Compatibility section added to ADR-010 with tool-to-CE-version mapping table. Closes [#177](https://github.com/KubeHeal/openshift-cluster-health-mcp/issues/177)
 
 ## [0.1.0] - 2026-04-21
 
@@ -61,5 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional KServe integration via `ENABLE_KSERVE` environment variable
 - OCP-version image tagging strategy: `quay.io/takinosh/openshift-cluster-health-mcp:4.x-latest`
 
-[Unreleased]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/KubeHeal/openshift-cluster-health-mcp/releases/tag/v0.1.0

@@ -23,8 +23,9 @@ internal/
   server/                # HTTP server and MCP protocol handling
     config.go            # Environment-based configuration
     server.go            # Core MCP server with tool/resource registration
-  tools/                 # MCP tool implementations (6 tools)
-  resources/             # MCP resource implementations (3 resources)
+  tools/                 # MCP tool implementations (17 tools)
+  resources/             # MCP resource implementations (4 resources)
+  prompts/               # MCP prompt templates (6 prompts)
 pkg/
   clients/               # External API clients (K8s, Coordination Engine, KServe)
     kubernetes.go        # K8s client with connection pooling
@@ -34,19 +35,20 @@ pkg/
     memory_cache.go
 ```
 
-### MCP Tools vs Resources
-- **Tools** (internal/tools/): Active operations invoked by clients (6 total)
-  - `get-cluster-health` - Cluster health snapshot
-  - `list-pods` - Pod listing with filtering
-  - `list-incidents` - Active incidents (requires Coordination Engine)
-  - `trigger-remediation` - Automated remediation
-  - `analyze-anomalies` - ML anomaly detection (requires KServe)
-  - `get-model-status` - KServe model health
+### MCP Tools, Resources, and Prompts
 
-- **Resources** (internal/resources/): Passive data access with caching (3 total)
-  - `cluster://health` - Cluster health (10s cache)
-  - `cluster://nodes` - Node info (30s cache)
-  - `cluster://incidents` - Active incidents (5s cache)
+- **Tools** (internal/tools/): Active operations invoked by clients (17 total)
+  - Always available (4): `get-cluster-health`, `list-pods`, `calculate-pod-capacity`, `list-adrs`
+  - Coordination Engine gated (10): `list-incidents`, `create-incident`, `trigger-remediation`, `get-remediation-recommendations`, `predict-resource-usage`, `analyze-scaling-impact`, `get-throttled-pods`, `predict-disk-exhaustion`, `get-rightsizing-recommendations`, `investigate-rca`
+  - KServe gated (3): `analyze-anomalies` (also requires CE), `get-model-status`, `list-models`
+
+- **Resources** (internal/resources/): Passive data access with caching (4 total)
+  - Always available: `cluster://health` (10s cache), `cluster://nodes` (30s cache)
+  - Coordination Engine gated: `cluster://incidents` (5s cache), `cluster://remediation-history` (30s cache)
+
+- **Prompts** (internal/prompts/): Reusable prompt templates (6 total)
+  - Always available: `diagnose-cluster`, `investigate-pods`, `check-anomalies`, `optimize-data-access`
+  - Coordination Engine gated: `predict-and-prevent`, `correlate-incidents`
 
 ### Tool/Resource Registration Pattern
 All tools and resources follow this interface pattern:
@@ -271,16 +273,23 @@ See `charts/openshift-cluster-health-mcp/templates/clusterrole.yaml` for full RB
 ### Adding New Tools
 1. Create tool file in `internal/tools/` (e.g., `my_tool.go`)
 2. Implement the Tool interface (Name, Description, InputSchema, Execute)
-3. Register in `internal/server/server.go:registerTools()`
-4. Add to type switch in `handleListTools()` for HTTP endpoint support
+3. Register in `internal/server/server.go:registerTools()` using `s.registerTool(toolInstance)`
+4. Gate on appropriate client (`ceClient != nil`, `kserveClient != nil`) if the tool requires an integration
 5. Add integration tests in `internal/tools/*_test.go`
+6. Update expected tool count in `internal/server/server_test.go`
 
 ### Adding New Resources
 1. Create resource file in `internal/resources/` (e.g., `my_resource.go`)
 2. Implement URI(), Name(), Description(), MimeType(), Read() methods
-3. Register in `internal/server/server.go:registerResources()`
-4. Add to type switch in `handleListResources()`
+3. Register in `internal/server/server.go:registerResources()` using `s.registerResource(resourceInstance)`
+4. Gate on appropriate client if the resource requires an integration
 5. Consider caching strategy (cache TTL based on data volatility)
+
+### Adding New Prompts
+1. Create prompt file in `internal/prompts/` (e.g., `my_prompt.go`)
+2. Implement Name(), Description(), Arguments(), Template() methods
+3. Register in `internal/server/server.go:registerPrompts()`
+4. Gate on appropriate client if the prompt requires an integration
 
 ### Error Handling Pattern
 - Client errors: Return errors from Execute(), MCP SDK converts to error response
@@ -340,7 +349,7 @@ All main and release branches are protected to ensure code quality and prevent u
 
 ### Protected Branches
 - **`main`** - Primary development branch (1 required approval)
-- **`release-4.18`**, **`release-4.19`**, **`release-4.20`** - Release branches (2 required approvals)
+- **`release-4.18`** through **`release-4.22`** - Release branches (2 required approvals)
 
 ### Making Changes
 - **Direct pushes are blocked** - All changes must go through Pull Requests
