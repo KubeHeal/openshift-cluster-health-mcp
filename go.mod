@@ -5,9 +5,9 @@ go 1.25.0
 require (
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/stretchr/testify v1.12.1
-	k8s.io/api v0.35.8
-	k8s.io/apimachinery v0.35.8
-	k8s.io/client-go v0.35.8
+	k8s.io/api v0.35.9
+	k8s.io/apimachinery v0.35.9
+	k8s.io/client-go v0.35.9
 )
 
 require (
