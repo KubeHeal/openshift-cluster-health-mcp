@@ -71,11 +71,22 @@ func TestTriggerRemediationTool_Execute_Validation(t *testing.T) {
 
 func ceRemediationServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req clients.TriggerRemediationRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		actions := []string{"Restart Deployment " + req.Namespace + "/" + req.Resource.Name}
+		if req.Issue.Type == "oom_kill" {
+			actions = []string{"Raise the memory limit on the Deployment that owns " + req.Namespace + "/" + req.Resource.Name}
+		}
 		resp := clients.TriggerRemediationResponse{
 			WorkflowID:        "wf-abc-123",
 			Status:            "triggered",
 			DeploymentMethod:  "Helm",
 			EstimatedDuration: "30s",
+			PlannedActions:    actions,
+		}
+		if req.DryRun {
+			resp.WorkflowID = ""
+			resp.Status = "pending"
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
@@ -162,6 +173,10 @@ func TestTriggerRemediationTool_Execute_DryRun(t *testing.T) {
 	require.True(t, ok)
 	assert.True(t, out.DryRun)
 	assert.Contains(t, out.Message, "DRY RUN")
+	assert.Contains(t, out.Message, "No changes were applied")
+	assert.Contains(t, out.Message, "Restart Deployment default/web-app")
+	assert.Equal(t, []string{"Restart Deployment default/web-app"}, out.PlannedActions)
+	assert.NotContains(t, out.Message, "memory limit patch applied")
 }
 
 func TestTriggerRemediationTool_Execute_OOMKillDryRun(t *testing.T) {
@@ -187,4 +202,9 @@ func TestTriggerRemediationTool_Execute_OOMKillDryRun(t *testing.T) {
 	assert.True(t, out.DryRun)
 	assert.True(t, out.OOMKillDetected)
 	assert.Contains(t, out.OOMKillAdvice, "StatefulSet/worker")
+	assert.Contains(t, out.OOMKillAdvice, "A real trigger would raise the memory limit")
+	assert.Contains(t, out.Message, "No changes were applied")
+	assert.Contains(t, out.Message, "Raise the memory limit")
+	assert.NotContains(t, out.Message, "memory limit patch applied")
+	assert.NotContains(t, out.OOMKillAdvice, "memory limit patch applied")
 }
