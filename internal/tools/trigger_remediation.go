@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/KubeHeal/openshift-cluster-health-mcp/pkg/clients"
 )
@@ -102,15 +103,16 @@ type TriggerRemediationInput struct {
 
 // TriggerRemediationOutput represents the tool output
 type TriggerRemediationOutput struct {
-	Status            string `json:"status"`
-	WorkflowID        string `json:"workflow_id"`
-	IncidentID        string `json:"incident_id"`
-	DeploymentMethod  string `json:"deployment_method"`
-	EstimatedDuration string `json:"estimated_duration"`
-	Message           string `json:"message"`
-	DryRun            bool   `json:"dry_run,omitempty"`
-	OOMKillDetected   bool   `json:"oomkill_detected"`
-	OOMKillAdvice     string `json:"oomkill_advice,omitempty"`
+	Status            string   `json:"status"`
+	WorkflowID        string   `json:"workflow_id"`
+	IncidentID        string   `json:"incident_id"`
+	DeploymentMethod  string   `json:"deployment_method"`
+	EstimatedDuration string   `json:"estimated_duration"`
+	PlannedActions    []string `json:"planned_actions,omitempty"`
+	Message           string   `json:"message"`
+	DryRun            bool     `json:"dry_run,omitempty"`
+	OOMKillDetected   bool     `json:"oomkill_detected"`
+	OOMKillAdvice     string   `json:"oomkill_advice,omitempty"`
 }
 
 // Execute runs the trigger-remediation tool
@@ -169,14 +171,22 @@ func (t *TriggerRemediationTool) Execute(ctx context.Context, args map[string]in
 		IncidentID:        input.IncidentID,
 		DeploymentMethod:  resp.DeploymentMethod,
 		EstimatedDuration: resp.EstimatedDuration,
+		PlannedActions:    resp.PlannedActions,
 		DryRun:            input.DryRun,
 	}
 
 	if input.DryRun {
-		output.Message = fmt.Sprintf("DRY RUN: Remediation for %s/%s validated successfully", input.ResourceKind, input.ResourceName)
-	} else {
-		output.Message = fmt.Sprintf("Remediation triggered successfully (workflow: %s)", resp.WorkflowID)
+		output.Message = dryRunMessage(resp.PlannedActions)
+		if input.IssueType == "oom_kill" {
+			output.OOMKillDetected = true
+			output.OOMKillAdvice = fmt.Sprintf(
+				"OOMKill detected for %s/%s in namespace %s. A real trigger would raise the memory limit. No changes were applied.",
+				input.ResourceKind, input.ResourceName, input.Namespace)
+		}
+		return output, nil
 	}
+
+	output.Message = fmt.Sprintf("Remediation triggered successfully (workflow: %s)", resp.WorkflowID)
 
 	// OOMKill-aware context (CE v1.2.0): surface memory patching capability.
 	if input.IssueType == "oom_kill" {
@@ -190,4 +200,19 @@ func (t *TriggerRemediationTool) Execute(ctx context.Context, args map[string]in
 	}
 
 	return output, nil
+}
+
+func dryRunMessage(actions []string) string {
+	message := "DRY RUN: No changes were applied."
+	if len(actions) == 0 {
+		return message
+	}
+	var builder strings.Builder
+	builder.WriteString(message)
+	builder.WriteString(" Planned actions:")
+	for _, action := range actions {
+		builder.WriteString("\n- ")
+		builder.WriteString(action)
+	}
+	return builder.String()
 }

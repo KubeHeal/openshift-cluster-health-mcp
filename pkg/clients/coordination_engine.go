@@ -104,10 +104,11 @@ type TriggerRemediationRequest struct {
 
 // TriggerRemediationResponse represents the response from triggering remediation
 type TriggerRemediationResponse struct {
-	WorkflowID        string `json:"workflow_id"`
-	Status            string `json:"status"`
-	DeploymentMethod  string `json:"deployment_method"`
-	EstimatedDuration string `json:"estimated_duration"`
+	WorkflowID        string   `json:"workflow_id"`
+	Status            string   `json:"status"`
+	DeploymentMethod  string   `json:"deployment_method"`
+	EstimatedDuration string   `json:"estimated_duration"`
+	PlannedActions    []string `json:"planned_actions,omitempty"`
 }
 // AnalyzeAnomaliesRequest represents a request to analyze anomalies
 type AnalyzeAnomaliesRequest struct {
